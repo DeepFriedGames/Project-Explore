@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\Dropbox\workspace\Project Explore\core\build\libs\core-1.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="d18dd2efec7092c5a95c5ecc705da5bddde2fd5a">
+        <dex dex="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\pre-dexed\release\core-1.0_3e40cd4492584bb9938b6269dff2e56d425d4ff7.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx-controllers\1.9.2\d651e0d52443b1c1a943641eebc06482e29923bc\gdx-controllers-1.9.2.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="d651e0d52443b1c1a943641eebc06482e29923bc">
+        <dex dex="C:\Users\Stuart\Documents\Workspace\Project Explore\android\build\intermediates\pre-dexed\debug\gdx-controllers-1.9.2_4ce3b8056e9f9fb1148dc5d96348f4876ef297bf.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx\1.9.2\e641cb91bec06bc64d9ddf7a7d7062caceec73cd\gdx-1.9.2.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="e641cb91bec06bc64d9ddf7a7d7062caceec73cd">
+        <dex dex="C:\Users\Stuart\Documents\Workspace\Project Explore\android\build\intermediates\pre-dexed\debug\gdx-1.9.2_d21c845a8d36bc232b07a85a37686983f906590e.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\.gradle\caches\modules-2\files-2.1\com.kotcrab.vis\vis-ui\1.4.0\948a04cc1301e8ce1096ad5163b54c0e6b332bcc\vis-ui-1.4.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="948a04cc1301e8ce1096ad5163b54c0e6b332bcc">
+        <dex dex="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\pre-dexed\debug\vis-ui-1.4.0_dd9d3dc5990244075157045cf11d313a0d192b41.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\incremental-runtime-classes\debug\instant-run.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="27.0.3"
+        sha1="12920f9016b8b05acbc2af7cdc13cef6946fe7d3">
+        <dex dex="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run_14116d4be923d84d56b5718c4c086f518a298c3c\classes.dex" />
+    </item>
+    <item
+        jar="C:\Users\Stuart\Documents\Workspace\Project Explore\core\build\libs\core-1.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="5680333bba49025599a4ee025d204000261ba283">
+        <dex dex="C:\Users\Stuart\Documents\Workspace\Project Explore\android\build\intermediates\pre-dexed\debug\core-1.0_fec57570bee44e5cd15a20965eb5ef41fd755164.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx-backend-android\1.9.2\342b830bc718dc1965c8f13fc58dc500e8bd262f\gdx-backend-android-1.9.2.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="342b830bc718dc1965c8f13fc58dc500e8bd262f">
+        <dex dex="C:\Users\Stuart\Documents\Workspace\Project Explore\android\build\intermediates\pre-dexed\debug\gdx-backend-android-1.9.2_233f0b1ac7b18f9bac4f2bef2e8ac887dec5bd16.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\incremental-classes\debug\instant-run-bootstrap.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="27.0.3"
+        sha1="77bf1724078a3e86cd55e4e3f6d66b701929e291">
+        <dex dex="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\transforms\dex\debug\folders\1000\10000\instant-run-bootstrap_ddff61e8e32aa2d57bce961d1207dbf3783d086b\classes.dex" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx-controllers-android\1.9.2\201b3054fdbdf99404060036b8baf5f43ee734d8\gdx-controllers-android-1.9.2.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="201b3054fdbdf99404060036b8baf5f43ee734d8">
+        <dex dex="C:\Users\Stuart\Documents\Workspace\Project Explore\android\build\intermediates\pre-dexed\debug\gdx-controllers-android-1.9.2_72d2950761bb363fc755b06ce320bc3253c98eba.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\Documents\Workspace\Project Explore\core\build\libs\core-1.0.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="bcbfc1ac109dd089e50a797ee7a40d4e1becc727">
+        <dex dex="C:\Users\Stuart\Documents\Workspace\Project Explore\android\build\intermediates\pre-dexed\debug\core-1.0_fec57570bee44e5cd15a20965eb5ef41fd755164.jar" />
+    </item>
+    <item
+        is-multidex="false"
+        jar="C:\Users\Stuart\.gradle\caches\modules-2\files-2.1\com.badlogicgames.gdx\gdx\1.9.6\47d1e9b890e364ec28f128e9bb3b9a12a94c164\gdx-1.9.6.jar"
+        jumboMode="false"
+        optimize="true"
+        revision="27.0.3"
+        sha1="047d1e9b890e364ec28f128e9bb3b9a12a94c164">
+        <dex dex="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\pre-dexed\debug\gdx-1.9.6_08711b9d2005bbd9ea88eba61619ddc48442a8ba.jar" />
+    </item>
+    <item
+        is-multidex="true"
+        jar="C:\Users\Stuart\.gradle\caches\modules-2\files-2.1\com.flowpowered\flow-noise\1.0.1-SNAPSHOT\e837af613d75e382041cedc083047bc7c5c6034c\flow-noise-1.0.1-SNAPSHOT.jar"
+        jumboMode="true"
+        optimize="true"
+        revision="27.0.3"
+        sha1="e837af613d75e382041cedc083047bc7c5c6034c">
+        <dex dex="C:\Users\Stuart\Dropbox\workspace\Project Explore\android\build\intermediates\transforms\dex\debug\folders\1000\10\flow-noise-1.0.1-SNAPSHOT_f4529df604829442d485c69814fdbd6f07b39a08\classes.dex" />
+    </item>
+
+</items>

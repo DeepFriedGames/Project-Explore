@@ -1,0 +1,15 @@
+<component name="libraryTable">
+  <library name="Gradle: de.golfgl.gdxgamesvcs:gdx-gamesvcs-android-gpgs:1.0.2@aar">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/df7d400ed3154f0a72cf1bd8818583b6/gdx-gamesvcs-android-gpgs-1.0.2/jars/classes.jar!/" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/df7d400ed3154f0a72cf1bd8818583b6/gdx-gamesvcs-android-gpgs-1.0.2/res" />
+      <root url="file://$USER_HOME$/.gradle/caches/transforms-2/files-2.1/df7d400ed3154f0a72cf1bd8818583b6/gdx-gamesvcs-android-gpgs-1.0.2/AndroidManifest.xml" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/de.golfgl.gdxgamesvcs/gdx-gamesvcs-android-gpgs/1.0.2/9b629550d88319e009735c7c5cde2724df07b87b/gdx-gamesvcs-android-gpgs-1.0.2-javadoc.jar!/" />
+    </JAVADOC>
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/de.golfgl.gdxgamesvcs/gdx-gamesvcs-android-gpgs/1.0.2/ff08dd08728604716b80ca067235e9d29bd6334d/gdx-gamesvcs-android-gpgs-1.0.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

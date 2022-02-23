@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Project_Explore.iml" filepath="$PROJECT_DIR$/.idea/modules/Project_Explore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/android/Project_Explore.android.iml" filepath="$PROJECT_DIR$/.idea/modules/android/Project_Explore.android.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/core/Project_Explore.core.iml" filepath="$PROJECT_DIR$/.idea/modules/core/Project_Explore.core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/desktop/Project_Explore.desktop.iml" filepath="$PROJECT_DIR$/.idea/modules/desktop/Project_Explore.desktop.iml" />
+    </modules>
+  </component>
+</project>

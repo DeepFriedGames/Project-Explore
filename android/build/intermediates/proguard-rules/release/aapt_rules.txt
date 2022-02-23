@@ -1,0 +1,4 @@
+# Referenced at C:\Users\stuar\OneDrive\Java Workspace\Project Explore\android\build\intermediates\merged_manifests\release\AndroidManifest.xml:29
+-keep class com.google.android.gms.common.api.GoogleApiActivity { <init>(); }
+# Referenced at C:\Users\stuar\OneDrive\Java Workspace\Project Explore\android\build\intermediates\merged_manifests\release\AndroidManifest.xml:18
+-keep class com.shdwfghtr.explore.AndroidLauncher { <init>(); }
