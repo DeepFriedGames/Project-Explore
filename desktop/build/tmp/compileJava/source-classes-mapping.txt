@@ -1,2 +1,0 @@
-com/shdwfghtr/explore/desktop/DesktopLauncher.java
- com.shdwfghtr.explore.desktop.DesktopLauncher

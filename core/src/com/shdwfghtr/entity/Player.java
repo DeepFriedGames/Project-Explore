@@ -30,7 +30,7 @@ public class Player extends Entity {
 
     public ParticleEffectPool.PooledEffect oxygenEffect;
     private ParticleEffectPool.PooledEffect stepEffect;
-    private final HashMap<String, Animation<TextureRegion>> animations = new HashMap<String, Animation<TextureRegion>>();
+    private final HashMap<String, Animation<TextureRegion>> animations = new HashMap<>();
     public float charge = 1, jump_speed = 4.55f, bullet_life = 0.18f; //bullet_life is in seconds
     public boolean UP, SPIN, RUN, DOWN, MORPH, MISSILE;
     public int maxHealth = 99, maxMissiles, missiles, armor, maxArmor;
@@ -344,77 +344,76 @@ public class Player extends Entity {
 
     public void fire() {
         SPIN = false;
-        if(!SPIN)
-            if(!MORPH) {
-                Bullet bullet = Bullet.POOL.obtain();
-                bullet.setDelete(false);
-                //get the animation for the bullet
-                if(MISSILE) {
-                    bullet.name = "missile";
-                    missiles --;
-                } else if(itemActive("phase_shot")) bullet.name = "phase_shot";
-                else if(itemActive("wide_shot")) bullet.name = "wide_shot";
-                else bullet.name = "bullet";
-                bullet.loadAnimation(World.CURRENT);
-                Asset.getMusicHandler().playSound(bullet.name, 1, Asset.RANDOM.nextFloat() * 0.4f + 0.8f, 0);
+        if(!MORPH) {
+            Bullet bullet = Bullet.POOL.obtain();
+            bullet.setDelete(false);
+            //get the animation for the bullet
+            if(MISSILE) {
+                bullet.name = "missile";
+                missiles --;
+            } else if(itemActive("phase_shot")) bullet.name = "phase_shot";
+            else if(itemActive("wide_shot")) bullet.name = "wide_shot";
+            else bullet.name = "bullet";
+            bullet.loadAnimation(World.CURRENT);
+            Asset.getMusicHandler().playSound(bullet.name, 1, Asset.RANDOM.nextFloat() * 0.4f + 0.8f, 0);
 
-                //set the width and height of the bullet
-                float w = Asset.getEntityAtlas().findRegion(bullet.name).getRegionWidth(),
-                        h = Asset.getEntityAtlas().findRegion(bullet.name).getRegionHeight();
-                w += charge - 1;
-                h += charge - 1;
-                bullet.power = power * charge + (MISSILE ? 2 : 0);
+            //set the width and height of the bullet
+            float w = Asset.getEntityAtlas().findRegion(bullet.name).getRegionWidth(),
+                    h = Asset.getEntityAtlas().findRegion(bullet.name).getRegionHeight();
+            w += charge - 1;
+            h += charge - 1;
+            bullet.power = power * charge + (MISSILE ? 2 : 0);
 
-                float x, y;
-                //set the position of the bullet
-                if(UP) {
-                    y = getTop();
-                    x = getCenterX() + (left ? -3 : 3) - w / 2;
-                } else if(!onGround() && DOWN) {
-                    y = getCenterY() - h / 2;
-                    x = getCenterX() - w / 2;
-                } else {
-                    y = getTop() - 9 - h / 2;
-                    x = getX() + (left ? -w : getWidth());
-                }
-                bullet.setBounds(x, y, w, h);
+            float x, y;
+            //set the position of the bullet
+            if(UP) {
+                y = getTop();
+                x = getCenterX() + (left ? -3 : 3) - w / 2;
+            } else if(!onGround() && DOWN) {
+                y = getCenterY() - h / 2;
+                x = getCenterX() - w / 2;
+            } else {
+                y = getTop() - 9 - h / 2;
+                x = getX() + (left ? -w : getWidth());
+            }
+            bullet.setBounds(x, y, w, h);
 
-                //set the velocity of the bullet
-                bullet.d.setZero();
-                bullet.target = null;
-                if(UP)
-                    bullet.d.y = Bullet.SPEED;
-                else if(!onGround() && DOWN)
-                    bullet.d.y = -Bullet.SPEED;
-                else
-                    bullet.d.x = left ? -Bullet.SPEED : Bullet.SPEED;
+            //set the velocity of the bullet
+            bullet.d.setZero();
+            bullet.target = null;
+            if(UP)
+                bullet.d.y = Bullet.SPEED;
+            else if(!onGround() && DOWN)
+                bullet.d.y = -Bullet.SPEED;
+            else
+                bullet.d.x = left ? -Bullet.SPEED : Bullet.SPEED;
 
-                if(MISSILE && itemActive("homing_missile")) {
-                    float oldDst2 = 100000f;
-                    for(Entity e : World.CURRENT.getActiveEntities()) {
-                        if (!(e instanceof Enemy) || !e.getBox().overlaps(Asset.CAMERA.getBox())) continue;
-                        float newDst2 = e.getCenter().dst2(bullet.getCenterX(), bullet.getCenterY());
-                        if (bullet.target == null || newDst2 < oldDst2) {
-                            bullet.target = e;
-                            oldDst2 = newDst2;
-                        }
+            if(MISSILE && itemActive("homing_missile")) {
+                float oldDst2 = 100000f;
+                for(Entity e : World.CURRENT.getActiveEntities()) {
+                    if (!(e instanceof Enemy) || !e.getBox().overlaps(Asset.CAMERA.getBox())) continue;
+                    float newDst2 = e.getCenter().dst2(bullet.getCenterX(), bullet.getCenterY());
+                    if (bullet.target == null || newDst2 < oldDst2) {
+                        bullet.target = e;
+                        oldDst2 = newDst2;
                     }
                 }
-
-                //without the long shot bullets will be deleted after 1/10 of a second
-                if(!MISSILE) bullet.rangeTimer.reset(bullet_life);
-
-                //bullet is added to the World.CURRENT
-                World.CURRENT.addEntity(bullet);
-            } else if(itemActive("bomb")) {
-                Asset.getMusicHandler().playSound("bomb");
-                Bomb bomb = Bomb.POOL.obtain();
-                bomb.setDelete(false);
-                bomb.setPower(charge);
-                bomb.setPosition(getCenterX() - bomb.getWidth() / 2, getCenterY() - bomb.getHeight()/2);
-                bomb.timer.reset();
-                World.CURRENT.addEntity(bomb);
             }
+
+            //without the long shot bullets will be deleted after 1/10 of a second
+            if(!MISSILE) bullet.rangeTimer.reset(bullet_life);
+
+            //bullet is added to the World.CURRENT
+            World.CURRENT.addEntity(bullet);
+        } else if(itemActive("bomb")) {
+            Asset.getMusicHandler().playSound("bomb");
+            Bomb bomb = Bomb.POOL.obtain();
+            bomb.setDelete(false);
+            bomb.setPower(charge);
+            bomb.setPosition(getCenterX() - bomb.getWidth() / 2, getCenterY() - bomb.getHeight()/2);
+            bomb.timer.reset();
+            World.CURRENT.addEntity(bomb);
+        }
     }
 
     public static float calculateJumpHeight(float initial_velocity) {
