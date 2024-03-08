@@ -4,7 +4,8 @@ import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 
 public class Wasp extends Enemy implements Pool.Poolable {
     public static final Pool<Wasp> POOL = new Pool<Wasp>() {
@@ -41,7 +42,7 @@ public class Wasp extends Enemy implements Pool.Poolable {
 
     @Override
     public void draw(Batch batch) {
-        TextureRegion tr = getAnimation().getKeyFrame(Asset.TIME);
+        TextureRegion tr = getAnimation().getKeyFrame(TimeService.GetTime());
         if((!tr.isFlipX() && !left) || (tr.isFlipX() && left))
             tr.flip(true, false);
         batch.draw(tr, getX(), getY());
@@ -55,7 +56,7 @@ public class Wasp extends Enemy implements Pool.Poolable {
 
     @Override
     public void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("enemy_damage");
+        if(!hurt) GdxGame.audioService.playSound("enemy_damage");
         super.takeDamage(amount);
     }
 

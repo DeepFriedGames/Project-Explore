@@ -9,29 +9,30 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.Array;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.ControllerService;
+import com.shdwfghtr.explore.GdxGame;
 
 import java.util.HashMap;
 
 public class TouchHandler extends InputHandler {
-    private static final Button ARROW_RIGHT = new Button(Asset.getSkin()), ARROW_UP = new Button(Asset.getSkin()),
-            ARROW_LEFT = new Button(Asset.getSkin()),	ARROW_DOWN = new Button(Asset.getSkin()),
-            CIRCLE_DOWN = new Button(Asset.getSkin()), CIRCLE_RIGHT = new Button(Asset.getSkin()),
-            CIRCLE_LEFT = new Button(Asset.getSkin()), CIRCLE_UP = new Button(Asset.getSkin()),
-            BAR_RIGHT = new Button(Asset.getSkin()), BAR_LEFT = new Button(Asset.getSkin());
-    private static final Touchpad TOUCHPAD = new Touchpad(0, Asset.getSkin());
+    private static final Button ARROW_RIGHT = GdxGame.uiService.createButton(), ARROW_UP = GdxGame.uiService.createButton(),
+            ARROW_LEFT = GdxGame.uiService.createButton(),	ARROW_DOWN = GdxGame.uiService.createButton(),
+            CIRCLE_DOWN = GdxGame.uiService.createButton(), CIRCLE_RIGHT = GdxGame.uiService.createButton(),
+            CIRCLE_LEFT = GdxGame.uiService.createButton(), CIRCLE_UP = GdxGame.uiService.createButton(),
+            BAR_RIGHT = GdxGame.uiService.createButton(), BAR_LEFT = GdxGame.uiService.createButton();
+    private static final Touchpad TOUCHPAD = GdxGame.uiService.createTouchPad();
 
     private final HashMap<Integer, String> pointers = new HashMap<Integer, String>(5);
     private final Table table = new Table();
 
-    public static final Array<Button> BUTTONS = new Array<Button>(new Button[]{ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, CIRCLE_UP, CIRCLE_DOWN, CIRCLE_LEFT, CIRCLE_RIGHT, BAR_LEFT, BAR_RIGHT});
+    public static final Array<Button> BUTTONS = new Array<>(new Button[]{ARROW_UP, ARROW_DOWN, ARROW_LEFT, ARROW_RIGHT, CIRCLE_UP, CIRCLE_DOWN, CIRCLE_LEFT, CIRCLE_RIGHT, BAR_LEFT, BAR_RIGHT});
 
     @Override
     public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-        String name = event.getTarget().getName();
-        if(name != null && Asset.CONTROLS.contains(name)) {
-            pointers.put(pointer, name);
-            return inputDown(event, Asset.CONTROLS.getInteger(name));
+        String input = event.getTarget().getName();
+        if(input != null && ControllerService.hasInput(input)) {
+            pointers.put(pointer, input);
+            return inputDown(event, ControllerService.getInput(input));
         }
         return false;
     }
@@ -39,45 +40,44 @@ public class TouchHandler extends InputHandler {
     @Override
     public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
         if(pointers.containsKey(pointer)) {
-            inputUp(event, Asset.CONTROLS.getInteger(pointers.get(pointer)));
+            inputUp(event, ControllerService.getInput(pointers.get(pointer)));
             pointers.remove(pointer);
         }
     }
 
     @Override
     public boolean isInputDown(String input) {
-        float sensitivity = Asset.CONTROLS.getFloat("touch_sensitivity", 0.5f);
-        if (input.matches("left"))
-            if(Asset.CONTROLS.getBoolean("use_axis"))
-                return TOUCHPAD.getKnobPercentX() < -sensitivity;
-        if (input.matches("right"))
-            if(Asset.CONTROLS.getBoolean("use_axis"))
-                return TOUCHPAD.getKnobPercentX() > sensitivity;
-        if(input.matches("down"))
-            if(Asset.CONTROLS.getBoolean("use_axis"))
-                return TOUCHPAD.getKnobPercentY() < -sensitivity;
-        if(input.matches("up"))
-            if(Asset.CONTROLS.getBoolean("use_axis"))
-                return TOUCHPAD.getKnobPercentY() > sensitivity;
+        float sensitivity = ControllerService.getTouchSensitivity();
+        if(ControllerService.isUsingAxis()){
+            if (input.matches("left"))
+                    return TOUCHPAD.getKnobPercentX() < -sensitivity;
+            if (input.matches("right"))
+                    return TOUCHPAD.getKnobPercentX() > sensitivity;
+            if(input.matches("down"))
+                    return TOUCHPAD.getKnobPercentY() < -sensitivity;
+            if(input.matches("up"))
+                    return TOUCHPAD.getKnobPercentY() > sensitivity;
+        }
 
         return pointers.containsValue(input);
     }
 
     @Override
     public void toStage(Stage stage) {
-        float size = Asset.CONTROLS.getFloat("touch_size", 64f),
-                padding = Asset.CONTROLS.getFloat("touch_padding", 1f),
-                border = Asset.CONTROLS.getFloat("touch_border", 5f),
-                position = Asset.CONTROLS.getFloat("touch_position", 5f);
+        float size = ControllerService.getTouchSize(),
+                padding = ControllerService.getTouchPadding(),
+                border = ControllerService.getTouchBorder(),
+                position = ControllerService.getTouchPosition();
 
         table.setBounds(0, 0, stage.getWidth(), (size + 2 * padding) * 3);
 
         for(int i=0; i<BUTTONS.size; i++) {
             BUTTONS.get(i).clearListeners();
             BUTTONS.get(i).addAction(Actions.alpha(0.5f));
+            String input = ControllerService.INPUT_LIST[i];
 
             //setting the button's input value to be that of the controller mapping
-            BUTTONS.get(Asset.CONTROLS.getInteger(Asset.INPUT_LIST[i])).setName(Asset.INPUT_LIST[i]);
+            BUTTONS.get(ControllerService.getInput(input)).setName(input);
             stage.addActor(BUTTONS.get(i));
         }
 
@@ -88,22 +88,22 @@ public class TouchHandler extends InputHandler {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 String name = "";
-                float sensitivity = Asset.CONTROLS.getFloat("touch_sensitivity", 0.3f);
+                float sensitivity = ControllerService.getTouchSensitivity();
                 if (TOUCHPAD.getKnobPercentX() < -sensitivity)
-                    inputDown(new InputEvent(), Asset.CONTROLS.getInteger("left"));
+                    inputDown(new InputEvent(), ControllerService.getInput("left"));
                 if (TOUCHPAD.getKnobPercentX() > sensitivity)
-                    inputDown(new InputEvent(), Asset.CONTROLS.getInteger("right"));
+                    inputDown(new InputEvent(), ControllerService.getInput("right"));
                 if (TOUCHPAD.getKnobPercentY() < -sensitivity)
-                    inputDown(new InputEvent(), Asset.CONTROLS.getInteger("down"));
+                    inputDown(new InputEvent(), ControllerService.getInput("down"));
                 if (TOUCHPAD.getKnobPercentY() > sensitivity)
-                    inputDown(new InputEvent(), Asset.CONTROLS.getInteger("up"));
+                    inputDown(new InputEvent(), ControllerService.getInput("up"));
                 if (Math.abs(TOUCHPAD.getKnobPercentX()) < sensitivity) {
-                    inputUp(new InputEvent(), Asset.CONTROLS.getInteger("left"));
-                    inputUp(new InputEvent(), Asset.CONTROLS.getInteger("right"));
+                    inputUp(new InputEvent(), ControllerService.getInput("left"));
+                    inputUp(new InputEvent(), ControllerService.getInput("right"));
                 }
                 if (Math.abs(TOUCHPAD.getKnobPercentY()) < sensitivity) {
-                    inputUp(new InputEvent(), Asset.CONTROLS.getInteger("up"));
-                    inputUp(new InputEvent(), Asset.CONTROLS.getInteger("down"));
+                    inputUp(new InputEvent(), ControllerService.getInput("up"));
+                    inputUp(new InputEvent(), ControllerService.getInput("down"));
                 }
             }
         });
@@ -120,7 +120,7 @@ public class TouchHandler extends InputHandler {
         dPadTable.add(ARROW_RIGHT).size(size).pad(padding).row();
         dPadTable.add(ARROW_DOWN).size(size).pad(padding).center().colspan(2);
 
-        if(Asset.CONTROLS.getBoolean("use_axis"))
+        if(ControllerService.isUsingAxis())
             table.add(TOUCHPAD).size(size * 2).pad(padding).center();
         else
             table.add(dPadTable);

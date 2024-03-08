@@ -1,17 +1,19 @@
 package com.shdwfghtr.entity;
 
-import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.Tile;
-import com.shdwfghtr.explore.Timer;
 import com.shdwfghtr.explore.World;
+import com.shdwfghtr.screens.GameScreen;
 
 public class Glibber extends Boss {
     private Body body;
@@ -20,7 +22,7 @@ public class Glibber extends Boss {
     private static final int EFFECT_WIDTH = 80;
     private final float spawnX, spawnY;
     private boolean intro = true;
-    private Timer spawnTimer;
+    private TimeService.Timer spawnTimer;
 
     public Glibber(World world, float x, float y) {
         super("boss_glibber_eye", x, y);
@@ -37,10 +39,10 @@ public class Glibber extends Boss {
 
     @Override
     public void initialize(final World world) {
-        intro_music = Asset.getManager().get("audio/Bergamot_Intro.ogg", Music.class);  //TODO make Glibber intro and music
-        main_music = Asset.getManager().get("audio/Bergamot.ogg", Music.class);
+        GdxGame.audioService.setMusic("audio/Bergamot_Intro.ogg", false);  //TODO make Glibber intro and music
+        GdxGame.audioService.queueMusic("audio/Bergamot.ogg");
 
-        spawnTimer = new Timer(8) {
+        spawnTimer = new TimeService.Timer(8) {
             @Override
             public boolean onCompletion() {
                 if(body.isDead()) {
@@ -54,7 +56,7 @@ public class Glibber extends Boss {
 
             @Override
             public void reset() {
-                ParticleEffectPool.PooledEffect effect = Asset.getParticles().obtain("boss_glibber", true);
+                ParticleEffectPool.PooledEffect effect = GdxGame.particleService.obtain("boss_glibber", true);
                 effect.setPosition(spawnX + (Tile.WIDTH - EFFECT_WIDTH)/2, spawnY - 3*Tile.HEIGHT);
                 super.reset();
             }
@@ -63,7 +65,7 @@ public class Glibber extends Boss {
         //creates a goopy body around the eye
         body = new Body(spawnX + (Tile.WIDTH - 42)/2, spawnY + (Tile.HEIGHT - 42)/2);
         body.setDelete(true);
-        ParticleEffectPool.PooledEffect effect = Asset.getParticles().obtain("glibber", true);
+        ParticleEffectPool.PooledEffect effect = GdxGame.particleService.obtain("glibber", true);
         effect.setPosition(spawnX + (Tile.WIDTH - EFFECT_WIDTH)/2, spawnY - 3*Tile.HEIGHT);
         world.addEntity(body);
 
@@ -81,11 +83,11 @@ public class Glibber extends Boss {
     @Override
     public void update(float delta) {
         if(!main_music.isPlaying() && !intro_music.isPlaying()) {
-            Asset.getMusicHandler().setVolume(1);
-            Asset.getMusicHandler().setMusic(intro_music, false);
+            GdxGame.audioService.setVolume(1);
+            GdxGame.audioService.setMusic(intro_music, false);
         }
         if(door == null) {
-            Asset.MESSAGES.add("-GLIBBER-");
+            GdxGame.uiService.addMessage("-GLIBBER-");
             float minDst2 = 1000000f;
             for(Entity e : world.getActiveEntities()) {
                 if (!(e instanceof Door)) continue;
@@ -100,14 +102,14 @@ public class Glibber extends Boss {
             door.setLocked(true);
         }
 
-        if(body.isDead() && !Asset.TIMERS.contains(spawnTimer))
+        if(body.isDead() && !TimeService.contains(spawnTimer))
             if(!isDead()) spawnTimer.reset();
 
         if(intro) d.setZero();
         else if(body.isDead()) {
             //bounce around like a dingus
             if(d.isZero(0.001f)) {
-                left = Asset.RANDOM.nextBoolean();
+                left = MathUtils.randomBoolean();
                 if(left) d.x = speed;
                 else d.x = -speed;
 
@@ -151,14 +153,14 @@ public class Glibber extends Boss {
 //        //draw the body
 //        TextureRegion tr;
 //        //this top if statement creates a flashing effect if the entity is hurt
-//        if(!hurt || Asset.RANDOM.nextBoolean()) {
+//        if(!hurt || MathUtils.randomBoolean()) {
 //            //draw the eye looking at the player
 //            float angle = getCenter().sub(Player.CURRENT.getCenter()).angle();
 //            tr = getAnimation().getKeyFrame(0);
 //            batch.draw(tr, getX(), getY(), getWidth()/2, getHeight()/2, getWidth(), getHeight(), 1, 1, angle);
 //
 //            if(body.isDead()) {
-//                tr = Asset.getEntityAtlas().findRegion("boss_glibber_regroup");
+//                tr = GdxGame.textureAtlasService.findEntityRegion("boss_glibber_regroup");
 //                float p = (Asset.TIME - spawnTimer.start) / spawnTimer.duration;
 //                if(p > 1) p = 0;
 //                batch.draw(tr, spawnX + (Tile.WIDTH - p*tr.getRegionWidth())/2, spawnY + (Tile.HEIGHT - p*tr.getRegionHeight())/2,
@@ -192,7 +194,7 @@ public class Glibber extends Boss {
                 if (d.y <= 0 && world.isBlocked(x + d.x, getY() + d.y)) {
                     box = World.getTileBox(x + d.x, getY() + d.y);
                     setPosition(getX(), box.y + box.height);
-                    if(Asset.RANDOM.nextBoolean()) d.y = 5f;
+                    if(MathUtils.randomBoolean()) d.y = 5f;
                     else d.y /= -2;
                 }
                 if (d.y >= 0 && world.isBlocked(x + d.x, getTop() + d.y)) {
@@ -206,7 +208,7 @@ public class Glibber extends Boss {
 
     @Override
     public void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("boss_damage", 1, 1, (getCenterX() - Player.CURRENT.getCenterX()) / 16f);
+        if(!hurt) GdxGame.audioService.playSound("boss_damage", 1, 1, (getCenterX() - Player.CURRENT.getCenterX()) / 16f);
         super.takeDamage(amount);
     }
 
@@ -214,7 +216,7 @@ public class Glibber extends Boss {
     public void destroy() {
         super.destroy();
         body.destroy();
-        if(Asset.TIMERS.contains(spawnTimer)) Asset.TIMERS.remove(spawnTimer);
+        TimeService.remove(spawnTimer);
     }
 
     private class Body extends Enemy {
@@ -233,10 +235,10 @@ public class Glibber extends Boss {
             if(other instanceof Bullet) {
                 System.out.println(other.toString());
                 System.out.println(this.toString());
-                float angle = Asset.RANDOM.nextFloat() * 60 + 60;
+                float angle = MathUtils.random(60f, 120f);
                 Goop goop = Goop.POOL.obtain();
                 goop.setPosition(other.getCenterX(), other.getTop());
-                goop.d.setAngle(angle);
+                goop.d.setAngleDeg(angle);
                 world.addEntity(goop);
             }
             super.collideWith(other);
@@ -247,7 +249,7 @@ public class Glibber extends Boss {
 //            if(crawling)
 //                super.draw(batch);
 //            else
-//                batch.draw(Asset.getEntityAtlas().findRegion("boss_glibber_regroup"), x, y, width, height);
+//                batch.draw(GdxGame.textureAtlasService.findEntityRegion("boss_glibber_regroup"), x, y, width, height);
 //        }
 
         @Override
@@ -287,17 +289,17 @@ public class Glibber extends Boss {
             this.crawling = false;
             this.setSize(42, 42);
             this.setPosition(spawnX + (getWidth() - 48)/2, spawnY);
-            this.d.setAngle(0);
+            this.d.setAngleDeg(0);
         }
     }
 
     private static class Goop extends Enemy implements Pool.Poolable {
-        private static final Array<TextureAtlas.AtlasRegion> FRAMES = Asset.getEntityAtlas().findRegions("boss_glibber_piece");
+        private static final Array<TextureAtlas.AtlasRegion> FRAMES = GdxGame.textureAtlasService.findEntityRegions("boss_glibber_piece");
         private static final Pool<Goop> POOL = new Pool<Goop>() {
             @Override
             protected Goop newObject() {
                 Goop goop = new Goop();
-                goop.texture = FRAMES.get(Asset.RANDOM.nextInt(FRAMES.size));
+                goop.texture = FRAMES.get(MathUtils.random(FRAMES.size));
                 goop.setSize(goop.texture.getRegionWidth(), goop.texture.getRegionHeight());
                 return goop;
             }
@@ -317,7 +319,7 @@ public class Glibber extends Boss {
         public void update(float delta) {
             super.update(delta);
             d.y -= World.CURRENT.getGravity();
-            if(!Asset.CAMERA.getBox().contains(getX() + d.x, getY() + d.y)) destroy();
+            if(!GdxGame.getCamera().getBox().contains(getX() + d.x, getY() + d.y)) destroy();
         }
 
 //        public void draw(Batch batch) {

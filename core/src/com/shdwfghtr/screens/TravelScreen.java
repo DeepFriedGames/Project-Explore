@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -20,15 +20,19 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
+import com.shdwfghtr.asset.ControllerService;
+import com.shdwfghtr.asset.ConversionService;
+import com.shdwfghtr.asset.DataService;
+import com.shdwfghtr.asset.InventoryService;
+import com.shdwfghtr.asset.PaletteService;
+import com.shdwfghtr.asset.TimeService;
 import com.shdwfghtr.entity.Player;
-import com.shdwfghtr.explore.Asset;
 import com.shdwfghtr.explore.GdxGame;
-import com.shdwfghtr.explore.Timer;
 import com.shdwfghtr.explore.World;
 import com.shdwfghtr.explore.WorldLoader;
+import com.shdwfghtr.ui.PauseMenuTable;
 
 import java.util.Comparator;
-import java.util.Map;
 import java.util.Random;
 
 /**
@@ -36,12 +40,9 @@ import java.util.Random;
  * These star systems will have loaders to explore which will take the player to the game screen.
  */
 public class TravelScreen extends Menu {
-    private static final Random RANDOM = new Random(Asset.DATA.getLong("seed"));
     private static final float DIALOG_WIDTH = 240, DIALOG_HEIGHT = 144;
 
-    private final Table menu = new Table();
-    private final Array<Actor> items = new Array<Actor>();
-
+    private PauseMenuTable menu;
     private WorldLoader[] loaders;
     private WorldLoader loading;
     private static final int BUTTON_SIZE = 32;//these buttons are square
@@ -52,80 +53,41 @@ public class TravelScreen extends Menu {
 
     @Override
     public void show() {
-        //reset the random number generator, then reload the star system seeds
-        if(Asset.DATA.contains("seed"))
-            RANDOM.setSeed(Asset.DATA.getLong("seed"));
-        else {
-            long seed = Asset.RANDOM.nextLong();
-            RANDOM.setSeed(seed);
-            Asset.DATA.putLong("seed", seed);
-        }
-        Asset.DATA.flush();
-
-        Asset.getMusicHandler().setMusic("Intro");
+        GdxGame.audioService.setMusic("Intro", true);
 
         headerText = "";
         super.show();
 
-        Asset.getCurtain().setBounds(0, 0, Asset.getStage().getWidth(), Asset.getStage().getHeight());
-        Asset.getCurtain().addAction(Actions.alpha(1));
-        Asset.getCurtain().setName("Curtain");
-        Asset.getCurtain().setTouchable(Touchable.disabled);
-        Asset.getStage().addActor(Asset.getCurtain());
-        Asset.getCurtain().addAction(Actions.fadeOut(2));
-        Asset.TIMERS.add(new Timer(2) {
-            @Override
-            public boolean onCompletion() {
-                Asset.getCurtain().remove();
-                return super.onCompletion();
-            }
-        });
+        GdxGame.uiService.DropCurtain(2.0f);
 
-        createStarSystem();
+        createStarSystem(DataService.getSeed());
+        menu = new PauseMenuTable(Player.CURRENT, loaders);
         createButtons();
-        createPauseMenu();
     }
 
-    private void createStarSystem() {
+    private void createStarSystem(long seed) {
         int starSize = 256;
 
-        int num_worlds = RANDOM.nextInt(4) + 3;
+        Random random = new Random(seed);
+        int num_worlds = random.nextInt(4) + 3;
         loaders = new WorldLoader[num_worlds];
         for(int i = 0; i < num_worlds; i++) {
-            final WorldLoader loader = new WorldLoader();
-
-            loader.seed = Math.abs(RANDOM.nextLong());
-            loader.width = RANDOM.nextInt(World.MAX_WIDTH - World.MIN_WIDTH) + World.MIN_WIDTH;
-            loader.height = Math.round(World.AVG_AREA / loader.width);
-            loader.area = loader.width * loader.height;
-            loader.charMap = new char[loader.height][loader.width];
-            loader.maxSectors = Math.round(loader.area * World.DENSITY);
-
-            World world = new World(loader.width, loader.height);
-            world.index = RANDOM.nextInt(World.NUM_INDICES);
-            world.palette = World.generatePalette(RANDOM.nextFloat());
-            world.gravity = RANDOM.nextFloat() * 2 + 0.5f;
-            while(world.atmosphere <= 0)
-                world.atmosphere = (float) RANDOM.nextGaussian() * 0.5f + 1.0f;
-            loader.world = world;
+            final WorldLoader loader = new WorldLoader(Math.abs(random.nextLong()));
             loaders[i] = loader;
 
-            final int r = RANDOM.nextInt(Math.round(table.getHeight()/2)) + starSize/2; //radius of rotation
-            final double a = RANDOM.nextFloat() * 2 * Math.PI; //starting angle
-            final float s = RANDOM.nextFloat() / 50; //speed at which planets orbit
+            final int r = random.nextInt(Math.round(table.getHeight()/2)) + starSize/2; //radius of rotation
+            final double a = random.nextFloat() * 2 * Math.PI; //starting angle
+            final float s = random.nextFloat() / 50; //speed at which planets orbit
 
-            TextureRegion tr = new TextureAtlas("atlas/Environment.atlas")
-                    .findRegion(World.getType(world.index));
-
-            Asset.recolorTextureRegion(tr, Asset.getPalette("environment"), world.palette);
-
+            TextureRegion tr = GdxGame.textureAtlasService.findEnvironmentRegion(World.getType(loader.world.index));
+            PaletteService.recolorTextureRegion(tr, PaletteService.getPalette("environment"), loader.world.palette);
             final Image planet = new Image(tr) {
                 @Override
                 public void act(float delta) {
                     super.act(delta);
                     float cX = table.getWidth() / 2, cY = table.getHeight() / 2;
-                    float x = Math.round(cX + r * Math.cos(Asset.TIME * s + a)),
-                            y = Math.round(cY + r * Math.sin(Asset.TIME * s + a) / 2);
+                    float x = Math.round(cX + r * Math.cos(TimeService.GetTime() * s + a)),
+                            y = Math.round(cY + r * Math.sin(TimeService.GetTime() * s + a) / 2);
                     setPosition(x, y);
                 }
             };
@@ -133,19 +95,19 @@ public class TravelScreen extends Menu {
                 @Override
                 public void clicked(InputEvent event, float x, float y) {
                     super.clicked(event, x, y);
-                    Dialog dialog = new Dialog(planet.getName(), Asset.getSkin()) {
+                    Dialog dialog = new Dialog(planet.getName(), GdxGame.uiService.getSkin()) {
                         @Override
                         protected void result(Object object) {
                             if(object.equals(0)){
                                 //Travel to the destination
-                                Asset.getCurtain().setBounds(0, 0, Asset.getStage().getWidth(), Asset.getStage().getHeight());
-                                Asset.getStage().addActor(Asset.getCurtain());
-                                Asset.getCurtain().addAction(Actions.fadeIn(1.0f));
+                                GdxGame.uiService.getCurtain().setBounds(0, 0, GdxGame.uiService.getStage().getWidth(), GdxGame.uiService.getStage().getHeight());
+                                GdxGame.uiService.getStage().addActor(GdxGame.uiService.getCurtain());
+                                GdxGame.uiService.getCurtain().addAction(Actions.fadeIn(1.0f));
                                 World.CURRENT = loader.world;
                                 loading = loader;
                                 Thread thread = new Thread(loading);
                                 thread.start();
-                                Asset.getStage().addActor(new Label("Please wait...", Asset.getSkin()));
+                                GdxGame.uiService.getStage().addActor(new Label("Please wait...", GdxGame.uiService.getSkin()));
 
                             }
                             //remove dialog
@@ -161,15 +123,14 @@ public class TravelScreen extends Menu {
                                     "Gravity:  " + Math.round(loader.world.gravity * 100) + "%\n" +
                                     "Atmosphere:  " + Math.round(loader.world.atmosphere * 100) + '%';
                     dialog.text(text).button("Travel", 0).button("Return", 1);
-                    Asset.getStage().addActor(dialog);
+                    GdxGame.uiService.getStage().addActor(dialog);
                 }
             });
             float variance = 1 - loader.area / World.AVG_AREA;
             variance *= 32;
             float planetSize = planet.getDrawable().getMinWidth() * (2.25f + variance);
             planet.setSize(planetSize, planetSize);
-            world.setName(Asset.Convert.toString(loader.seed));
-            planet.setName("Planet " + world.getName());
+            planet.setName("Planet " +loader.world.getName());
             table.addActor(planet);
         }
 
@@ -181,7 +142,7 @@ public class TravelScreen extends Menu {
                 Color batchColor = batch.getColor();
 
                 batch.setColor(loaders[0].world.palette[7]);
-                batch.draw(animation.getKeyFrame(Asset.TIME), getX(), getY(), getWidth(), getHeight());
+                batch.draw(animation.getKeyFrame(TimeService.GetTime()), getX(), getY(), getWidth(), getHeight());
                 batch.setColor(batchColor);
             }
         };
@@ -196,51 +157,50 @@ public class TravelScreen extends Menu {
     private void createButtons() {
         final ImageButton buttonNew, buttonSettings, buttonStats;
         //Adds the listeners to each button so that they take the player to the proper menu
-        buttonNew = new ImageButton(Asset.getSkin());
+        buttonNew = new ImageButton(GdxGame.uiService.getSkin());
         buttonNew.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                Asset.getCurtain().setBounds(0, 0, Asset.getStage().getWidth(), Asset.getStage().getHeight());
-                Asset.getStage().addActor(Asset.getCurtain());
-                Asset.getCurtain().addAction(Actions.fadeIn(1.0f));
-                Asset.TIMERS.add(new Timer(1.0f) {
+                GdxGame.uiService.getCurtain().setBounds(0, 0, GdxGame.uiService.getStage().getWidth(), GdxGame.uiService.getStage().getHeight());
+                GdxGame.uiService.getStage().addActor(GdxGame.uiService.getCurtain());
+                GdxGame.uiService.getCurtain().addAction(Actions.fadeIn(1.0f));
+                TimeService.addTimer(new TimeService.Timer(1.0f) {
                     @Override
                     public boolean onCompletion() {
                         if(menu.hasParent()) menu.remove();
-                        Asset.DATA.remove("seed");
-                        Asset.DATA.flush();
+                        DataService.clearSeed();
                         goToScreen(new TravelScreen());
                         return true;
                     }
                 });
             }
         });
-        buttonNew.add(new Image(new TextureRegionDrawable(Asset.getUIAtlas().findRegion("icon_new"))));
+        buttonNew.add(new Image(new TextureRegionDrawable(GdxGame.textureAtlasService.findUIRegion("icon_new"))));
         buttonNew.setName("New Button");
 
-        buttonSettings = new ImageButton(Asset.getSkin());
+        buttonSettings = new ImageButton(GdxGame.uiService.getSkin());
         buttonSettings.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                Asset.getMusicHandler().playSound("select");
+                GdxGame.audioService.playSound("select");
                 goToScreen(new OptionsMenu());
             }
         });
-        buttonSettings.add(new Image(new TextureRegionDrawable(Asset.getUIAtlas().findRegion("icon_settings"))));
+        buttonSettings.add(new Image(new TextureRegionDrawable(GdxGame.textureAtlasService.findUIRegion("icon_settings"))));
         buttonSettings.setName("Settings Button");
 
-        buttonStats = new ImageButton(Asset.getSkin());
+        buttonStats = new ImageButton(GdxGame.uiService.getSkin());
         buttonStats.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if(menu.hasParent()) {
-                    Asset.getMusicHandler().playSound("select");
-                    Asset.getMusicHandler().setVolume(1f);
+                    GdxGame.audioService.playSound("select");
+                    GdxGame.audioService.setVolume(1f);
                     menu.remove();
                 } else {
-                    int size = items.size;
+                    int size = menu.items.size;
                     for (int n = 0; n < size; n++) {
-                        Actor item = items.get(n);
+                        Actor item = menu.items.get(n);
                         if (item.hasParent()) continue;
                         Actor inv = menu.findActor("Inventory Label");
                         item.setPosition(inv.getX(), inv.getY() - item.getHeight() * (n + 2));
@@ -250,17 +210,17 @@ public class TravelScreen extends Menu {
                     menu.setTouchable(Touchable.childrenOnly);
                     menu.addAction(Actions.fadeIn(0.6f));
                     table.addActor(menu);
-                    Asset.getStage().setKeyboardFocus(menu);
+                    GdxGame.uiService.getStage().setKeyboardFocus(menu);
                 }
             }
         });
-        buttonStats.add(new Image(new TextureRegionDrawable(Asset.getUIAtlas().findRegion("icon_stats"))));
+        buttonStats.add(new Image(new TextureRegionDrawable(GdxGame.textureAtlasService.findUIRegion("icon_stats"))));
         buttonStats.setName("Stats Button");
 
         menu.addListener(new InputListener() {
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if(keycode == Asset.CONTROLS.getInteger("back") || keycode == Asset.CONTROLS.getInteger("start"))
+                if(keycode == ControllerService.getInput("back") || keycode == ControllerService.getInput("start"))
                     buttonStats.toggle();
                 return true;
             }
@@ -285,163 +245,27 @@ public class TravelScreen extends Menu {
 
         if(loading != null) {
             table.setTouchable(Touchable.disabled);
-            Asset.getMusicHandler().fadeOut(0.5f);
+            GdxGame.audioService.fadeOut(0.5f);
 
-            if (loading.getProgress() >= 1 && !Asset.getCurtain().hasActions()) {
-
-                World.recolorAtlasByRegion(Asset.getPalette("environment"),
-                        loading.world.palette, loading.world.entityAtlas,
+            if (loading.getProgress() >= 1 && !GdxGame.uiService.getCurtain().hasActions()) {
+                PaletteService.recolorAtlasByRegion(PaletteService.getPalette("environment"),
+                        loading.world.palette, GdxGame.textureAtlasService.entityAtlas,
                         "bossSheet", "enemySheet");
-                loading.world.generateTileRegions();
-                loading.world.sectorAtlas = World.generateSectorAtlas(loading.world);
-                loading.world.createEntities();
+                loading.generateTileRegions();
+                GdxGame.textureAtlasService.generateSectorAtlas(loading.world);
+                loading.createEntities();
                 goToScreen(new GameScreen(loading.world));
             }
         }
     }
 
     private Animation<TextureRegion> getStarAnimation() {
-        return new Animation<TextureRegion>(0.2f, Asset.getEnvironmentAtlas().findRegions("star"), Animation.PlayMode.LOOP);
+        return new Animation<>(0.2f, GdxGame.textureAtlasService.findEnvironmentRegions("star"), Animation.PlayMode.LOOP);
     }
 
-    private void createPauseMenu() {
-        menu.setBackground(new TextureRegionDrawable(new TextureRegion(Asset.getUIAtlas().findRegion("pauseMenu"))));
-        menu.setBounds(BUTTON_SIZE, BUTTON_SIZE, Asset.getStage().getWidth() - 2*BUTTON_SIZE, Asset.getStage().getHeight() - 2*BUTTON_SIZE);
-        menu.setName("Pause Menu");
-        menu.setLayoutEnabled(false);
-        menu.setTouchable(Touchable.disabled);
-        final float menuBorder =  15f;
-        final float menuBreak = menu.getWidth() / 4f;
-
-        String head = "System " + Asset.Convert.toString(Math.abs(Asset.DATA.getLong("seed")));
-        Label menuHeader = new Label(head, Asset.getSkin(), "title", Asset.getPalette("ui")[1]);
-        Asset.GLYPH.setText(Asset.getBodyFont(), head);
-        menuHeader.setSize(Asset.GLYPH.width, Asset.GLYPH.height);
-        menuHeader.setPosition(menuBreak + menuBorder*2, menu.getHeight() - menuHeader.getHeight() - menuBorder);
-        menuHeader.setTouchable(Touchable.disabled);
-        menu.addActor(menuHeader);
-
-        Label.LabelStyle style = new Label.LabelStyle(Asset.getBodyFont(), Color.WHITE);
-        for(int i = 0; i< loaders.length; i++) {
-            WorldLoader loader = loaders[i];
-            int lines = 5;
-            float labelHeight = Asset.getBodyFont().getLineHeight() * lines;
-            final String name = "Planet " + loader.world.getName();
-            Label label = new Label(name + '\n' +
-                    "  Type: " + World.getType(loader.world.index).replace("planet_", "").toUpperCase() + '\n' +
-                    "  Gravity: " + Math.round(loader.world.gravity * 100) + "%\n" +
-                    "  Atmosphere: " + Math.round(loader.world.atmosphere * 100) + '%', style);
-            float x = menuHeader.getX(),
-                    y = menuHeader.getY() - labelHeight * (i + 1);
-            if(y <= 0) {
-                x += menuBreak + 2 * menuBorder;
-                y += labelHeight * 5;
-            }
-            label.addListener(new ClickListener(){
-                @Override
-                public void clicked(InputEvent event, float x, float y) {
-                    super.clicked(event, x, y);
-                    ((ImageButton) Asset.getStage().getRoot().findActor("Stats Button")).toggle();
-                    Image planet = Asset.getStage().getRoot().findActor(name);
-                    Gdx.input.setCursorPosition(Math.round(planet.getX() + planet.getWidth()/2),
-                            Math.round(Asset.getStage().getHeight() - (planet.getY() + planet.getHeight()/2)));
-                }
-
-            });
-            label.setPosition(x, y);
-            menu.addActor(label);
-        }
-
-        //adds an image of the player
-        TextureRegion tr = Asset.getEntityAtlas().findRegion("player_stand_front");
-        Image player = new Image(tr);
-        player.setSize(tr.getRegionWidth() * 3, tr.getRegionHeight() * 3);
-        player.setPosition(menuBreak/2 - player.getWidth()/2, menu.getHeight() - player.getHeight() - menuBorder);
-        player.setTouchable(Touchable.disabled);
-        menu.addActor(player);
-
-        //also adds the player's stats to the pause menu
-        Actor stats = new Actor() {
-            @Override
-            public void draw(Batch batch, float parentAlpha) {
-                Asset.getBodyFont().setColor(1, 1, 1, parentAlpha);
-                Asset.getBodyFont().draw(batch, "Statistics", getX(), getY());
-                float power = Player.CURRENT.power;
-                float range = Player.calculateBulletRange(Player.CURRENT.bullet_life);
-                float speed = Player.calculateSpeed(Player.CURRENT.speed);
-                float jumpHeight = Player.calculateJumpHeight(Player.CURRENT.jump_speed);
-                power *= 100; //round power to the nearest 100th
-                power = Math.round(power);
-                power /= 100;
-                Asset.getBodyFont().draw(batch, "Power: " + power + " k", getX() + menuBorder, getY() - Asset.getBodyFont().getLineHeight());
-                Asset.getBodyFont().draw(batch, "Range: " + range + " m", getX() + menuBorder, getY() - Asset.getBodyFont().getLineHeight() * 2);
-                Asset.getBodyFont().draw(batch, "Speed: " + speed + " m/s", getX() + menuBorder, getY() - Asset.getBodyFont().getLineHeight() * 3);
-                Asset.getBodyFont().draw(batch, "Jump:  " + jumpHeight + " m", getX() + menuBorder, getY() - Asset.getBodyFont().getLineHeight() * 4);
-                Asset.getBodyFont().setColor(Color.WHITE);
-            }
-        };
-        stats.setPosition(menuBorder, player.getY() - menuBorder);
-        stats.setTouchable(Touchable.disabled);
-        menu.addActor(stats);
-
-        //adds a table to display the player's inventory
-        Actor inv = new Actor() {
-            @Override
-            public void draw(Batch batch, float parentAlpha) {
-                Asset.getBodyFont().setColor(1, 1, 1, parentAlpha);
-                Asset.getBodyFont().draw(batch, "Inventory", getX(), getY());
-                Asset.getBodyFont().setColor(Color.WHITE);
-            }
-        };
-        inv.setName("Inventory Label");
-        inv.setPosition(menuBorder, stats.getY() - Asset.getBodyFont().getLineHeight() * 5);
-        inv.setTouchable(Touchable.disabled);
-        menu.addActor(inv);
-
-        Map<String, ?> inventory = Player.INVENTORY.get();
-        for(String key : inventory.keySet()) {
-            addItemActor(key);
-        }
-
-    }
-
-    private void addItemActor(final String key) {
-        final String[] id = key.split(",");
-        if(id[0].contains("_up") || id[0].contains("ammo")
-                || id[0].contains("missiles") || id[0].contains("oxygen")
-                || id[0].contains("armor") || id[0].contains("small")
-                || id[0].contains("large") || id[0].length() <= 0)
-            return;
-        Actor item = new Actor() {
-            @Override
-            public void draw(Batch batch, float parentAlpha) {
-                Color c = new Color();
-                if(Player.INVENTORY.getBoolean(key))
-                    c.set(1, 1, 1, parentAlpha);
-                else
-                    c.set(0.3f, 0.3f, 0.3f, parentAlpha);
-                Asset.getBodyFont().setColor(c);
-                Asset.getBodyFont().draw(batch, getName(), getX(), getY() + getHeight());
-                Asset.getBodyFont().setColor(Color.WHITE);
-            }
-        };
-        item.addListener(new ClickListener() {
-            @Override
-            public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-                Player.INVENTORY.putBoolean(key, !Player.INVENTORY.getBoolean(key));
-                Player.INVENTORY.flush();
-                return super.touchDown(event, x, y, pointer, button);
-            }
-        });
-        item.setName(id[0].replace("item", "").replace("_", " ").toUpperCase());
-        item.setSize(menu.getWidth() / 4, Asset.getBodyFont().getLineHeight());
-        item.setTouchable(Touchable.enabled);
-        items.add(item);
-    }
-	
 	@Override
 	void goToPreviousScreen() {
-		Dialog exitDialog = new Dialog("Exit Game", Asset.getSkin()) {
+		Dialog exitDialog = new Dialog("Exit Game", GdxGame.uiService.getSkin()) {
 			@Override
 			protected void result(Object object) {
 				if(object.equals(0))
@@ -452,19 +276,17 @@ public class TravelScreen extends Menu {
 		};
 		exitDialog.text("Are you sure you want \n to exit the game?").button("Yes", 0).button("No", 1);
 		exitDialog.setSize(DIALOG_WIDTH, DIALOG_HEIGHT);
-		exitDialog.setPosition((Asset.getStage().getWidth() - exitDialog.getWidth()) / 2,
-                (Asset.getStage().getHeight() - exitDialog.getHeight()) /2);
-		Asset.getStage().addActor(exitDialog);
+		exitDialog.setPosition((GdxGame.uiService.getStage().getWidth() - exitDialog.getWidth()) / 2,
+                (GdxGame.uiService.getStage().getHeight() - exitDialog.getHeight()) /2);
+		GdxGame.uiService.getStage().addActor(exitDialog);
 	}
 
-    private class PlanetComparator implements Comparator<Actor> {
+    private static class PlanetComparator implements Comparator<Actor> {
         @Override
         public int compare(Actor a1, Actor a2) {
             float cY1 = a1.getY() + a1.getHeight() / 2,
                     cY2 = a2.getY() + a2.getHeight() / 2;
-            if(cY1 < cY2) return 1;
-            else if(cY1 == cY2) return 0;
-            else return -1;
+            return Float.compare(cY2, cY1);
         }
     }
 }

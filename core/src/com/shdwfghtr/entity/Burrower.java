@@ -45,7 +45,7 @@ public class Burrower extends ChainEnemy {
             case TRANSITION:
                 d.y -= World.CURRENT.getGravity();
 
-                float y = World.CURRENT.getSector(getCenter()).getY();
+                float y = World.CURRENT.getSector(getCenter()).y;
                 if(getY() < y) {
                     mode = Mode.BURROW;
                     setY(y);

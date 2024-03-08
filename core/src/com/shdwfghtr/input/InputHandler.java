@@ -1,22 +1,20 @@
 package com.shdwfghtr.input;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.shdwfghtr.asset.ControllerService;
+import com.shdwfghtr.asset.DataService;
+import com.shdwfghtr.asset.InventoryService;
 import com.shdwfghtr.entity.Entity;
 import com.shdwfghtr.entity.Player;
 import com.shdwfghtr.entity.Turret;
-import com.shdwfghtr.explore.Asset;
 import com.shdwfghtr.explore.GameState;
 import com.shdwfghtr.explore.GdxGame;
-import com.shdwfghtr.explore.Timer;
 import com.shdwfghtr.explore.World;
 import com.shdwfghtr.screens.GameScreen;
-import com.shdwfghtr.screens.TravelScreen;
+import com.shdwfghtr.ui.LeavePlanetDialog;
 
 public class InputHandler extends InputListener {
     Player player;
@@ -40,9 +38,9 @@ public class InputHandler extends InputListener {
             } if(isInputDown("shoot"))  {
                 if(getPlayer().charge >= Player.MAX_CHARGE)
                     getPlayer().charge = Player.MAX_CHARGE;
-                else if((getPlayer().MISSILE && !getPlayer().MORPH && getPlayer().itemActive("charge_missile"))
-                        || (getPlayer().MORPH && !getPlayer().MISSILE && getPlayer().itemActive("charge_bomb"))
-                        || (!getPlayer().MORPH && !getPlayer().MISSILE && getPlayer().itemActive("charge_shot")))
+                else if((getPlayer().MISSILE && !getPlayer().MORPH && InventoryService.isActive("charge_missile"))
+                        || (getPlayer().MORPH && !getPlayer().MISSILE && InventoryService.isActive("charge_bomb"))
+                        || (!getPlayer().MORPH && !getPlayer().MISSILE && InventoryService.isActive("charge_shot")))
                     getPlayer().charge *= Player.CHARGE_RATE;
             }
         }}
@@ -52,7 +50,7 @@ public class InputHandler extends InputListener {
     }
 
     boolean inputUp(InputEvent event, int inputCode) {
-        if(inputCode == Asset.CONTROLS.getInteger("start")) {
+        if(inputCode == ControllerService.getInput("start")) {
             if(gameScreen != null) {
                 if (gameScreen.getState() == GameState.PLAY)
                     gameScreen.setState(GameState.PAUSE);
@@ -60,49 +58,27 @@ public class InputHandler extends InputListener {
                     gameScreen.setState(GameState.PLAY);
             }
             return true;
-        } else if(inputCode == Asset.CONTROLS.getInteger("back")
+        } else if(inputCode == ControllerService.getInput("back")
                 || inputCode == Input.Keys.BACK || inputCode == Input.Keys.ESCAPE) {
             if (gameScreen != null && gameScreen.getState() == GameState.PAUSE) {
                 gameScreen.setState(GameState.PLAY);
                 return true;
             } else {
-                player.save();
-                Dialog dialog = new Dialog("Leave Planet?", Asset.getSkin()) {
-                    @Override
-                    protected void result(Object object) {
-                        if(object.equals(1)) {
-                            Asset.getCurtain().setBounds(0, 0, Asset.getStage().getWidth(), Asset.getStage().getHeight());
-                            Asset.getStage().addActor(Asset.getCurtain());
-                            Asset.getCurtain().addAction(Actions.fadeIn(1.0f));
-                            Asset.TIMERS.add(new Timer(1.0f) {
-                                @Override
-                                public boolean onCompletion() {
-                                    ((GdxGame) Gdx.app.getApplicationListener()).setScreen(new TravelScreen());
-                                    return super.onCompletion();
-                                }
-                            });
-                        }
-
-                        remove();
-                    }
-                };
-                dialog.text("Are you sure you want\nto leave this Planet?")
-                        .button("Yes", 1)
-                        .button("No", 0);
-                Asset.getStage().addActor(dialog);
-                dialog.show(Asset.getStage());
+                DataService.save(player);
+                LeavePlanetDialog dialog = new LeavePlanetDialog(GdxGame.uiService);
+                dialog.show(GdxGame.uiService.getStage());
                 dialog.toFront();
                 return true;
             }
         } else if(player != null && gameScreen.getState() == GameState.PLAY) {
-            if(inputCode == Asset.CONTROLS.getInteger("left") || inputCode == Asset.CONTROLS.getInteger("right"))
+            if(inputCode == ControllerService.getInput("left") || inputCode == ControllerService.getInput("right"))
                 player.d.x = 0;
-            else if (inputCode == Asset.CONTROLS.getInteger("up")) player.UP = false;
-            else if(inputCode == Asset.CONTROLS.getInteger("dash"))	player.RUN = false;
-            else if(inputCode == Asset.CONTROLS.getInteger("jump")) {
+            else if (inputCode == ControllerService.getInput("up")) player.UP = false;
+            else if(inputCode == ControllerService.getInput("dash"))	player.RUN = false;
+            else if(inputCode == ControllerService.getInput("jump")) {
                 if(player.d.y > 0)
                     player.d.y = 0;
-            } else if(inputCode == Asset.CONTROLS.getInteger("shoot")) {
+            } else if(inputCode == ControllerService.getInput("shoot")) {
                 if(player.charge > 1.2f)
                     player.fire();
                 player.charge = 1;
@@ -114,7 +90,7 @@ public class InputHandler extends InputListener {
     boolean inputDown(InputEvent event, int inputCode) {
         if(player == null) return false;
         if (gameScreen.getState() == GameState.PLAY) {
-            if (inputCode == Asset.CONTROLS.getInteger("up")) {
+            if (inputCode == ControllerService.getInput("up")) {
                 if (player.MORPH && !gameScreen.world.isBlocked(player.getX(), player.getTop() + 3)
                         && !gameScreen.world.isBlocked(player.getRight(), player.getTop() + 3)) {
                     player.MORPH = false;
@@ -125,8 +101,8 @@ public class InputHandler extends InputListener {
                     player.UP = true;
                 }
             }
-            if (inputCode == Asset.CONTROLS.getInteger("down")) {
-                if (player.DOWN && player.itemActive("compression_orb")) {
+            if (inputCode == ControllerService.getInput("down")) {
+                if (player.DOWN && InventoryService.isActive("compression_orb")) {
                     player.MORPH = true;
                     player.charge = 1;
                 } else {
@@ -135,19 +111,19 @@ public class InputHandler extends InputListener {
                 }
 
             }
-            if (inputCode == Asset.CONTROLS.getInteger("dash")) {
-                if (!player.MORPH && player.itemActive("swift_boots"))
+            if (inputCode == ControllerService.getInput("dash")) {
+                if (!player.MORPH && InventoryService.isActive("swift_boots"))
                     player.RUN = true;
             }
-            if (inputCode == Asset.CONTROLS.getInteger("switch")) {
+            if (inputCode == ControllerService.getInput("switch")) {
                 if (player.missiles > 0) {
                     player.MISSILE = !player.MISSILE;
                     player.charge = 1;
                 }
             }
-            if (inputCode == Asset.CONTROLS.getInteger("jump")) {
+            if (inputCode == ControllerService.getInput("jump")) {
                 if (player.canJump() && !player.MORPH) {
-                    Asset.getMusicHandler().playSound("jump");
+                    GdxGame.audioService.playSound("jump");
                     if (player.d.x != 0) {
                         player.SPIN = true;
                         player.d.y = player.jump_speed * 0.94f;
@@ -160,7 +136,7 @@ public class InputHandler extends InputListener {
                     player.charge = 1;
                 }
             }
-            if (inputCode == Asset.CONTROLS.getInteger("shoot")) {
+            if (inputCode == ControllerService.getInput("shoot")) {
                 if (player.SPIN) {
                     player.SPIN = false;
                         for (float y = player.getTop(); y <= player.getTop() + 13; y++)
@@ -172,7 +148,7 @@ public class InputHandler extends InputListener {
 
                 //quick check to make turrets fire when the player does
                 for (Entity entity : gameScreen.world.getActiveEntities()) {
-                    if (entity instanceof Turret && Asset.CAMERA.getBox().overlaps(entity.getBox()))
+                    if (entity instanceof Turret && gameScreen.camera.getBox().overlaps(entity.getBox()))
                         ((Turret) entity).fire();
                 }
             }

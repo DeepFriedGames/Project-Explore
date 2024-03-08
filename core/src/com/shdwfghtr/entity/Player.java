@@ -1,16 +1,19 @@
 package com.shdwfghtr.entity;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.InventoryService;
+import com.shdwfghtr.asset.PaletteService;
+import com.shdwfghtr.asset.TimeService;
 import com.shdwfghtr.explore.GameState;
 import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.Tile;
@@ -19,12 +22,11 @@ import com.shdwfghtr.screens.GameOverScreen;
 import com.shdwfghtr.screens.GameScreen;
 
 import java.util.HashMap;
-import java.util.Set;
 
 public class Player extends Entity {
+    private static final Vector2 VECTOR2 = new Vector2();
     public static final float MAX_CHARGE = 3f, CHARGE_RATE = 1.005f, SCALE = 7 / 8f;
     private static final float TRAUMA_RATIO = 0.1f / 3;  //the amount of trauma per damage
-    public static final Preferences INVENTORY = Gdx.app.getPreferences("inventory");
     public static Player CURRENT;
     private static long soundID = -1;
 
@@ -54,7 +56,7 @@ public class Player extends Entity {
     public void loadAnimations() {
         Animation.PlayMode playMode;
         float duration;
-        Array<TextureAtlas.AtlasRegion> regions = World.CURRENT.entityAtlas.getRegions();
+        Array<TextureAtlas.AtlasRegion> regions = GdxGame.textureAtlasService.getEntityRegions();
         int size = regions.size;
         for (int i = 0; i < size; i++) {
             TextureAtlas.AtlasRegion ar = regions.get(i);
@@ -71,7 +73,7 @@ public class Player extends Entity {
                         duration = 0.02f;
                         playMode = Animation.PlayMode.NORMAL;
                     }
-                    animations.put(ar.name, new Animation<TextureRegion>(duration, World.CURRENT.entityAtlas.findRegions(ar.name), playMode));
+                    animations.put(ar.name, new Animation<TextureRegion>(duration, GdxGame.textureAtlasService.findEntityRegions(ar.name), playMode));
 
                 }
             }
@@ -81,7 +83,7 @@ public class Player extends Entity {
     @Override
     void takeDamage(float amount) {
         if(!hurt) {
-            Asset.getMusicHandler().playSound("player_damage");
+            GdxGame.audioService.playSound("player_damage");
             if(amount > 0) armor--;
             amount -= armor;
             if(amount <= 0) amount = 0;
@@ -91,17 +93,17 @@ public class Player extends Entity {
             hurtTimer.entity = this;
             hurtTimer.duration = 0.8f;
             hurtTimer.reset();
-            Asset.CAMERA.addTrauma(amount * TRAUMA_RATIO);
+            GdxGame.getCamera().addTrauma(amount * TRAUMA_RATIO);
         }
     }
 
     @Override
     public void update(float delta) {
         super.update(delta);
-        final Sound razorJumpSound = Asset.getManager().get("audio/razor_jump.wav", Sound.class);
-        if(SPIN && itemActive("razor_jump") && soundID < 0)
+        final Sound razorJumpSound = GdxGame.assetService.GetResource("audio/razor_jump.wav", Sound.class);
+        if(SPIN && InventoryService.isActive("razor_jump") && soundID < 0)
             soundID = razorJumpSound.loop(0.7f);
-        else if(!SPIN || !itemActive("razor_jump")) {
+        else if(!SPIN || !InventoryService.isActive("razor_jump")) {
             razorJumpSound.stop(soundID);
             soundID = -1;
         }
@@ -120,9 +122,9 @@ public class Player extends Entity {
     }
 
     public boolean canJump() {
-        if(itemActive("double_jump"))
+        if(InventoryService.isActive("double_jump"))
             return (SPIN && d.y > -3.8 && d.y < -1.6) || onGround();
-        else if(itemActive("wall_jump"))
+        else if(InventoryService.isActive("wall_jump"))
             return (SPIN && ((World.CURRENT.isBlocked(getX() - 9, getY()) && d.x > 0)
                     || (World.CURRENT.isBlocked(getRight() + 9, getY()) && d.x < 0))) || onGround();
         else
@@ -136,10 +138,10 @@ public class Player extends Entity {
 
             if (MORPH) newName = newName.concat("roll");
             else if (SPIN && !DOWN)
-                if (itemActive("wall_jump") && SPIN && ((World.CURRENT.isBlocked(getX() - 9, getY()) && d.x > 0)
+                if (InventoryService.isActive("wall_jump") && SPIN && ((World.CURRENT.isBlocked(getX() - 9, getY()) && d.x > 0)
                         || (World.CURRENT.isBlocked(getRight() + 9, getY()) && d.x < 0)))
                     newName = newName.concat("jump_wall");
-                else if (itemActive("razor_jump")) newName = newName.concat("razor_spin");
+                else if (InventoryService.isActive("razor_jump")) newName = newName.concat("razor_spin");
                 else newName = newName.concat("spin");
             else if (d.y != 0)
                 if (UP) newName = newName.concat("jump_up");
@@ -157,29 +159,29 @@ public class Player extends Entity {
                 else newName = newName.concat("stand");
 
             if (MISSILE) newName = newName.concat("_missile");
-            if (Asset.RANDOM.nextFloat() * 2 + 1 < charge) newName = newName.concat("charge");
+            if (MathUtils.random() * 2 + 1 < charge) newName = newName.concat("charge");
 
             if (!newName.matches(name)) {
                 name = newName;
                 setAnimation(animations.get(name));
             }
 
-            setRegion(getAnimation().getKeyFrame(Asset.TIME));
+            setRegion(getAnimation().getKeyFrame(TimeService.GetTime()));
             setSize(getRegionWidth() * SCALE, getRegionHeight() * SCALE);
-            if (itemActive("mach_boots"))
+            if (InventoryService.isActive("mach_boots"))
                 for (int i = 1; i < speed * 2; i++)
-                    if (Math.abs(d.x) > speed && Asset.RANDOM.nextFloat() < 0.4f)
+                    if (Math.abs(d.x) > speed && MathUtils.random() < 0.4f)
                         batch.draw(this, getX() - 1 - (Math.abs(d.x) - speed) * i * d.x, getY() - (Math.abs(d.x) - speed) * i * d.y);
             super.draw(batch);
 
             //creates cute little dust particles when the player takes a step
 
-            if (name.contains("walk") && (getAnimation().getKeyFrameIndex(Asset.TIME) == 1 || getAnimation().getKeyFrameIndex(Asset.TIME) == 4)) {
+            if (name.contains("walk") && (getAnimation().getKeyFrameIndex(TimeService.GetTime()) == 1 || getAnimation().getKeyFrameIndex(TimeService.GetTime()) == 4)) {
                 float efx = left ? getX() : getRight() - 5;
-                stepEffect = Asset.getParticles().obtain("step", true);
+                stepEffect = GdxGame.particleService.obtain("step", true);
 
                 if (World.CURRENT.isBlocked(efx, getY() - World.CURRENT.getGravity() * Gdx.graphics.getDeltaTime()) && stepEffect != null) {
-                    Asset.Particles.colorEffect(stepEffect, World.CURRENT.palette[2]);
+                    PaletteService.colorEffect(stepEffect, World.CURRENT.palette[2]);
                     stepEffect.setPosition(efx, getY());
                 }
             }
@@ -196,24 +198,24 @@ public class Player extends Entity {
             String itemName = item.getName();
             if(itemName.contains("O2_large")) {
                 health += 25;
-                Asset.getMusicHandler().playSound("oxygen");
+                GdxGame.audioService.playSound("oxygen");
             } else if(itemName.contains("O2_small")) {
                 health += 10;
-                Asset.getMusicHandler().playSound("oxygen");
+                GdxGame.audioService.playSound("oxygen");
             } else if(itemName.contains("oxygen_tank")) {
                 maxHealth += 100;
                 health = maxHealth;
-                Asset.getMusicHandler().playSound("oxygen");
+                GdxGame.audioService.playSound("oxygen");
             } else if(itemName.contains("ammo")) {
                 missiles += 1;
-                Asset.getMusicHandler().playSound("ammo");
+                GdxGame.audioService.playSound("ammo");
             } else if(itemName.contains("armor")) {
                 armor += 2;
                 if(itemName.contains("armor_up"))
                     maxArmor += 2;
-                Asset.getMusicHandler().playSound("armor");
+                GdxGame.audioService.playSound("armor");
             } else {
-                Asset.getMusicHandler().playSound("power_up");
+                GdxGame.audioService.playSound("power_up");
                 if(itemName.contains("oxygen_tank")) {
                     maxHealth += 100;
                     health = maxHealth;
@@ -231,8 +233,8 @@ public class Player extends Entity {
                     bullet_life += 0.6f;
             }
             final String message = itemName.replace("item_", "").toUpperCase().replace('_', ' ');
-            Asset.MESSAGES.add(message);
-            addToInventory(item);
+            GdxGame.uiService.addMessage(message);
+            InventoryService.addItem(item);
         } if (e instanceof Snail || e instanceof Dropper) {
             if (!World.CURRENT.isBlocked(getCenterX(), getTop() + speed) && d.y <= 0
                     && Math.abs(getY() - e.getTop()) < Math.abs(d.y)
@@ -243,21 +245,21 @@ public class Player extends Entity {
                 if (Math.abs(d.y) < Math.abs(e.d.y)) {
                     d.y = e.d.y;
                 }
-                if (d.y < -speed) Asset.getMusicHandler().playSound("footstep");
-                if (itemActive("razor_jump") && SPIN) e.takeDamage(12);
+                if (d.y < -speed) GdxGame.audioService.playSound("footstep");
+                if (InventoryService.isActive("razor_jump") && SPIN) e.takeDamage(12);
                 setY(e.getTop());
                 SPIN = false;
                 if (MORPH) d.y /= -3;
                 else d.y = Math.abs(e.d.y) < 0.01f ? 0 : e.d.y;
             }
         } else if(e instanceof Enemy && !hurt && e.power > 0) {
-            if((itemActive("razor_jump") && SPIN) || (itemActive("mach_boots") && Math.abs(d.x) > speed*2))
+            if((InventoryService.isActive("razor_jump") && SPIN) || (InventoryService.isActive("mach_boots") && Math.abs(d.x) > speed*2))
                 e.takeDamage(12);
             else {
                 takeDamage(e.power);
-                Asset.VECTOR2.set(getCenterX() - e.getCenterX(), 16);
-                Asset.VECTOR2.limit(1.8f);
-                d.set(Asset.VECTOR2);
+                VECTOR2.set(getCenterX() - e.getCenterX(), 16);
+                VECTOR2.limit(1.8f);
+                d.set(VECTOR2);
             }
         }
     }
@@ -277,8 +279,8 @@ public class Player extends Entity {
                 char c = World.CURRENT.getChar(x, y);
                 if(c == '^') takeDamage(2);
                 if(!World.CURRENT.isBlocked(x, y)) continue;
-                if((itemActive("razor_jump") && SPIN) ||
-                        (itemActive("mach_boots") && Math.abs(d.x) > speed * 2 && c == '>'))
+                if((InventoryService.isActive("razor_jump") && SPIN) ||
+                        (InventoryService.isActive("mach_boots") && Math.abs(d.x) > speed * 2 && c == '>'))
                     World.CURRENT.breakTile(x, y);
                 else {
                     if(getCenter().dst2(box.x + (d.x > 0 ? -(getWidth() + 1) : box.width), y) < Tile.WIDTH * Tile.WIDTH)
@@ -295,18 +297,18 @@ public class Player extends Entity {
             char c = World.CURRENT.getChar(x, y);
             if(d.y < 0) {
                 if(!World.CURRENT.isBlocked(x, y)) continue;
-                if (itemActive("razor_jump") && SPIN && Tile.isBreakable(World.CURRENT.getChar(x, y)))
+                if (InventoryService.isActive("razor_jump") && SPIN && Tile.isBreakable(World.CURRENT.getChar(x, y)))
                     World.CURRENT.breakTile(x, y);
                 else {
-                    if(Asset.VECTOR2.set(getCenterX(), getY()).dst2(x, box.y + box.height) < Tile.HEIGHT * Tile.HEIGHT)
+                    if(VECTOR2.set(getCenterX(), getY()).dst2(x, box.y + box.height) < Tile.HEIGHT * Tile.HEIGHT)
                         setY(box.y + box.height);
 
                     if (d.y < -3) {
-                        Asset.getMusicHandler().playSound("footstep", 1, Asset.RANDOM.nextFloat() * 0.4f + 0.8f, 0);
-                        stepEffect = Asset.getParticles().obtain("dust", true);
+                        GdxGame.audioService.playSound("footstep", 1, MathUtils.random() * 0.4f + 0.8f, 0);
+                        stepEffect = GdxGame.particleService.obtain("dust", true);
 
                         if (stepEffect != null) {
-                            Asset.Particles.colorEffect(stepEffect, World.CURRENT.palette[2]);
+                            PaletteService.colorEffect(stepEffect, World.CURRENT.palette[2]);
                             stepEffect.setPosition(getX(), getY());
                         }
                     }
@@ -323,7 +325,7 @@ public class Player extends Entity {
                 box.set(World.getTileBox(x, y));
                 if(c == '^') takeDamage(2);
                 if(!World.CURRENT.isBlocked(x, y)) continue;
-                if(itemActive("razor_jump") && SPIN)
+                if(InventoryService.isActive("razor_jump") && SPIN)
                     World.CURRENT.breakTile(x, y);
                 else {
                     setY(box.y - getHeight());
@@ -331,15 +333,6 @@ public class Player extends Entity {
                 }
             }
         }
-    }
-
-    public boolean itemActive(String itemName) {
-        Set<String> keys = INVENTORY.get().keySet();
-        for(String key : keys) {
-            if(key.contains(itemName) && INVENTORY.getBoolean(key))
-                return true;
-        }
-        return false;
     }
 
     public void fire() {
@@ -351,15 +344,15 @@ public class Player extends Entity {
             if(MISSILE) {
                 bullet.name = "missile";
                 missiles --;
-            } else if(itemActive("phase_shot")) bullet.name = "phase_shot";
-            else if(itemActive("wide_shot")) bullet.name = "wide_shot";
+            } else if(InventoryService.isActive("phase_shot")) bullet.name = "phase_shot";
+            else if(InventoryService.isActive("wide_shot")) bullet.name = "wide_shot";
             else bullet.name = "bullet";
             bullet.loadAnimation(World.CURRENT);
-            Asset.getMusicHandler().playSound(bullet.name, 1, Asset.RANDOM.nextFloat() * 0.4f + 0.8f, 0);
+            GdxGame.audioService.playSound(bullet.name, 1, MathUtils.random() * 0.4f + 0.8f, 0);
 
             //set the width and height of the bullet
-            float w = Asset.getEntityAtlas().findRegion(bullet.name).getRegionWidth(),
-                    h = Asset.getEntityAtlas().findRegion(bullet.name).getRegionHeight();
+            float w = GdxGame.textureAtlasService.findEntityRegion(bullet.name).getRegionWidth(),
+                    h = GdxGame.textureAtlasService.findEntityRegion(bullet.name).getRegionHeight();
             w += charge - 1;
             h += charge - 1;
             bullet.power = power * charge + (MISSILE ? 2 : 0);
@@ -388,10 +381,10 @@ public class Player extends Entity {
             else
                 bullet.d.x = left ? -Bullet.SPEED : Bullet.SPEED;
 
-            if(MISSILE && itemActive("homing_missile")) {
+            if(MISSILE && InventoryService.isActive("homing_missile")) {
                 float oldDst2 = 100000f;
                 for(Entity e : World.CURRENT.getActiveEntities()) {
-                    if (!(e instanceof Enemy) || !e.getBox().overlaps(Asset.CAMERA.getBox())) continue;
+                    if (!(e instanceof Enemy)) continue;
                     float newDst2 = e.getCenter().dst2(bullet.getCenterX(), bullet.getCenterY());
                     if (bullet.target == null || newDst2 < oldDst2) {
                         bullet.target = e;
@@ -405,8 +398,8 @@ public class Player extends Entity {
 
             //bullet is added to the World.CURRENT
             World.CURRENT.addEntity(bullet);
-        } else if(itemActive("bomb")) {
-            Asset.getMusicHandler().playSound("bomb");
+        } else if(InventoryService.isActive("bomb")) {
+            GdxGame.audioService.playSound("bomb");
             Bomb bomb = Bomb.POOL.obtain();
             bomb.setDelete(false);
             bomb.setPower(charge);
@@ -417,8 +410,9 @@ public class Player extends Entity {
     }
 
     public static float calculateJumpHeight(float initial_velocity) {
-        float maxX = (initial_velocity - Asset.GRAVITY) / Asset.GRAVITY; //max of the jump parabola
-        float maxHeight = (initial_velocity - Asset.GRAVITY)*maxX - 0.5f*Asset.GRAVITY*maxX*maxX; //jump height in pixels
+        float gravity = World.CURRENT != null ? World.CURRENT.getGravity() : World.DEFAULT_GRAVITY;
+        float maxX = (initial_velocity - gravity) / gravity; //max of the jump parabola
+        float maxHeight = (initial_velocity - gravity)*maxX - 0.5f*gravity*maxX*maxX; //jump height in pixels
         maxHeight /= Tile.HEIGHT; //jump height in meters
         maxHeight *= 100; //round to the nearest 100th
         maxHeight = Math.round(maxHeight);
@@ -447,46 +441,4 @@ public class Player extends Entity {
         return range;
     }
 
-    private void addToInventory(Item item) {
-        String s = Entity.getSaveString(item);
-        if(!INVENTORY.contains(s)) {
-            INVENTORY.putBoolean(s, true);
-            INVENTORY.flush();
-            ((GameScreen) ((GdxGame) Gdx.app.getApplicationListener()).getScreen()).addItemActor(s);
-        }
-        item.destroy();
-    }
-
-    public void save() {
-        Asset.DATA.putFloat("bullet_life", bullet_life);
-        Asset.DATA.putFloat("speed", speed);
-        Asset.DATA.putFloat("jump_speed", jump_speed);
-        Asset.DATA.putFloat("power", power);
-        Asset.DATA.putFloat("health", health);
-
-        Asset.DATA.putInteger("maxHealth", maxHealth);
-        Asset.DATA.putInteger("maxMissiles", maxMissiles);
-        Asset.DATA.putInteger("missiles", missiles);
-        Asset.DATA.putInteger("armor", armor);
-        Asset.DATA.putInteger("maxArmor", maxArmor);
-
-        //INVENTORY is awkward to save, we need to store the world seed and xy values so
-        //if a player returns to a world the items don't respawn for easy pickups.
-        Asset.DATA.flush();
-        Asset.MESSAGES.add("Saved");
-    }
-
-    public static void load(Player player) {
-        player.bullet_life = Asset.DATA.getFloat("bullet_life", player.bullet_life);
-        player.speed = Asset.DATA.getFloat("speed", player.speed);
-        player.jump_speed = Asset.DATA.getFloat("jump_speed", player.jump_speed);
-        player.power = Asset.DATA.getFloat("power", player.power);
-
-        player.maxHealth = Asset.DATA.getInteger("maxHealth", player.maxHealth);
-        player.maxMissiles = Asset.DATA.getInteger("maxMissiles", player.maxMissiles);
-        player.missiles = Asset.DATA.getInteger("missiles", player.missiles);
-        player.armor = Asset.DATA.getInteger("armor", player.armor);
-        player.maxArmor = Asset.DATA.getInteger("maxArmor", player.maxArmor);
-        player.health = player.maxHealth;
-    }
 }

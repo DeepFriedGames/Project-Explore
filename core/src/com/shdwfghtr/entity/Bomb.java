@@ -1,16 +1,20 @@
 package com.shdwfghtr.entity;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Timer;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
+import com.shdwfghtr.screens.GameScreen;
 
 public class Bomb extends Entity implements Pool.Poolable{
+    public static final Vector2 VECTOR2 = new Vector2();
     public static final Pool<Bomb> POOL = new Pool<Bomb>() {
         @Override
         protected Bomb newObject() {
@@ -18,11 +22,11 @@ public class Bomb extends Entity implements Pool.Poolable{
         }
     };
     private static final float TRAUMA_RATIO = 0.3f / 4;  //trauma per damage
-    public final Timer timer = new Timer(1.2f) {
+    public final TimeService.Timer timer = new TimeService.Timer(1.2f) {
         @Override
         public boolean onCompletion() {
-            Asset.CAMERA.addTrauma(power * TRAUMA_RATIO);
-            Asset.getMusicHandler().playSound("explosion", 1, Asset.RANDOM.nextFloat() * 0.4f + 0.8f, 0);
+            GdxGame.getCamera().addTrauma(power * TRAUMA_RATIO);
+            GdxGame.audioService.playSound("explosion", 1, MathUtils.random(0.8f, 1.2f), 0);
             Explosion explosion = new Explosion("small", power, getCenterX(), getCenterY(), 16, 16);
             World.CURRENT.addEntity(explosion);
             destroy();
@@ -43,8 +47,8 @@ public class Bomb extends Entity implements Pool.Poolable{
     @Override
     public void draw(Batch batch) {
         TextureRegion frame;
-        float stateTime = Asset.TIME;
-        if(Asset.TIME - timer.start >= timer.duration * 2/3)
+        float stateTime = TimeService.GetTime();
+        if(stateTime - timer.start >= timer.duration * 2/3)
             stateTime *= 2;
         frame = getAnimation().getKeyFrame(stateTime);
         batch.draw(frame, getX(), getY(), getWidth() / 2, getHeight() / 2,
@@ -57,7 +61,7 @@ public class Bomb extends Entity implements Pool.Poolable{
     }
 
     @Override
-    void destroy() {
+    public void destroy() {
         super.destroy();
         POOL.free(this);
     }
@@ -80,7 +84,7 @@ public class Bomb extends Entity implements Pool.Poolable{
         @Override
         public void loadAnimation(World world) {
             Array<TextureRegion> regions = new Array<TextureRegion>();
-            regions.addAll(Asset.getExplosionAtlas().findRegions(name));
+            regions.addAll(GdxGame.textureAtlasService.findExplosionRegions(name));
 
             setAnimation(new Animation<TextureRegion>(0.04f, regions, Animation.PlayMode.NORMAL));
         }
@@ -88,9 +92,9 @@ public class Bomb extends Entity implements Pool.Poolable{
         @Override
         public void collideWith(Entity e) {
             if(e instanceof Player) {
-                Asset.VECTOR2.set(e.getCenterX() - getCenterX(), getHeight());
-                Asset.VECTOR2.setLength(2.4f);
-                e.d.set(Asset.VECTOR2);
+                VECTOR2.set(e.getCenterX() - getCenterX(), getHeight());
+                VECTOR2.setLength(2.4f);
+                e.d.set(VECTOR2);
             }
         }
 

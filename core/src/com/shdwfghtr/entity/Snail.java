@@ -3,10 +3,7 @@ package com.shdwfghtr.entity;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Tile;
-import com.shdwfghtr.explore.World;
+import com.shdwfghtr.explore.GdxGame;
 
 /**
  * Created by Stuart on 7/6/2015.
@@ -14,6 +11,8 @@ import com.shdwfghtr.explore.World;
  * of the tile.
  */
 public class Snail extends Enemy {
+
+    private static final Rectangle RECTANGLE = new Rectangle();
 
     Snail() {
         this(0, 0);
@@ -43,7 +42,7 @@ public class Snail extends Enemy {
     @Override
     public void collideWith(Entity entity) {
         if (entity instanceof Bullet || entity instanceof Bomb.Explosion) {
-            Rectangle hitBox = Asset.RECTANGLE;
+            Rectangle hitBox = RECTANGLE;
             if(left) {
                 if (d.angle() == 0)
                     hitBox.set(getCenterX(), getCenterY(), getWidth() / 2, getHeight() / 2);
@@ -69,7 +68,7 @@ public class Snail extends Enemy {
 
     @Override
     void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("damage1");
+        if(!hurt) GdxGame.audioService.playSound("damage1");
         super.takeDamage(amount);
     }
 

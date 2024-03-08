@@ -1,12 +1,8 @@
 package com.shdwfghtr.entity;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.World;
+import com.shdwfghtr.explore.GdxGame;
 
 public class Crawler extends Enemy {
     Crawler() {
@@ -34,7 +30,7 @@ public class Crawler extends Enemy {
 
     @Override
     public void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("enemy_damage");
+        if(!hurt) GdxGame.audioService.playSound("enemy_damage");
         super.takeDamage(amount);
     }
 

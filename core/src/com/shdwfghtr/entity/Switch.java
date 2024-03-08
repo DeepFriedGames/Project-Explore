@@ -2,7 +2,7 @@ package com.shdwfghtr.entity;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
 
 public abstract class Switch extends Entity {
@@ -27,9 +27,9 @@ public abstract class Switch extends Entity {
 		String lockedName = unlockedName.concat("_locked");
 
 		this.unlockedAnimation = new Animation<TextureRegion>(0.1f,
-				world.entityAtlas.findRegions(unlockedName), Animation.PlayMode.NORMAL);
+				GdxGame.textureAtlasService.findEntityRegions(unlockedName), Animation.PlayMode.NORMAL);
 		this.lockedAnimation = new Animation<TextureRegion>(0.1f,
-				world.entityAtlas.findRegions(lockedName), Animation.PlayMode.NORMAL);
+				GdxGame.textureAtlasService.findEntityRegions(lockedName), Animation.PlayMode.NORMAL);
 
 		setAnimation(this.lockedAnimation);
 
@@ -38,7 +38,7 @@ public abstract class Switch extends Entity {
 	@Override
 	public void collideWith(Entity e) {
 		if(e instanceof Bullet) {
-			Asset.getMusicHandler().playSound("switch");
+			GdxGame.audioService.playSound("switch");
 			e.destroy();
 			trigger();
 		}

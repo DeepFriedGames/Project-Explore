@@ -3,14 +3,17 @@ package com.shdwfghtr.entity;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.PaletteService;
+import com.shdwfghtr.asset.TimeService;
 import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
 import com.shdwfghtr.screens.GameScreen;
 
 public class Enemy extends Entity {
+    private static final Vector2 VECTOR2 = new Vector2();
 
 	Enemy(String name) {
 		super(name);
@@ -22,7 +25,7 @@ public class Enemy extends Entity {
 	
 	void initiateMovement() {
         Rectangle check = World.getTileBox(getCenterX(), getCenterY());
-        Vector2 center = check.getCenter(Asset.VECTOR2);
+        Vector2 center = check.getCenter(VECTOR2);
         if (World.CURRENT.isBlocked(center.x, check.getY() - speed)) {
             setPosition(center.x - getWidth() / 2, check.getY());
             d.set(left ? -speed : speed, 0);
@@ -40,11 +43,11 @@ public class Enemy extends Entity {
 
     @Override
     public void draw(Batch batch) {
-        setRegion(getAnimation().getKeyFrame(Asset.TIME));
+        setRegion(getAnimation().getKeyFrame(TimeService.GetTime()));
         setFlip(left, false);
         //this top if statement creates a flashing effect if the entity is hurt
-        if(!hurt || Asset.RANDOM.nextBoolean()) {
-            if (d.angle() == 270 || d.angle() == 90)
+        if(!hurt || MathUtils.randomBoolean()) {
+            if (d.angleDeg() == 270 || d.angleDeg() == 90)
                 batch.draw(this, getX(), getY(), getWidth() / 2, getHeight() / 2, getWidth(), getHeight(), 1, 1, 0, d.angle() == (left ? 90 : 270));
             else
                 batch.draw(this, getX(), getY(), getWidth() / 2, getHeight() / 2, getWidth(), getHeight(), 1, 1, d.angle() + (left ? 180 : 0));
@@ -99,18 +102,18 @@ public class Enemy extends Entity {
     }
 
 	@Override
-    void destroy() {
-        Asset.getMusicHandler().playSound("explosion", 1, Asset.RANDOM.nextFloat() *0.4f + 0.8f, 0);
-		ParticleEffectPool.PooledEffect effect = Asset.getParticles().obtain("explosion", false);
-		Asset.Particles.colorEffect(effect, World.CURRENT.palette[8]);
+    public void destroy() {
+        GdxGame.audioService.playSound("explosion", 1, MathUtils.random(0.8f, 1.2f), 0);
+		ParticleEffectPool.PooledEffect effect = GdxGame.particleService.obtain("explosion", false);
+		PaletteService.colorEffect(effect, World.CURRENT.palette[8]);
 		effect.setPosition(getCenterX(), getCenterY());
-        Asset.getParticles().add(effect);
+        GdxGame.particleService.add(effect);
 		if(!isDead()) dropItem(getCenterX(), getCenterY());
 		super.destroy();
 	}
 
 	private static void dropItem(float x, float y) {
-		float rand = Asset.RANDOM.nextFloat();
+		float rand = MathUtils.random();
 		double probArmor = Math.exp(((double) -3 * Player.CURRENT.armor / Player.CURRENT.maxArmor));
 		double probBigHealth = Math.exp(((double) -3 * Player.CURRENT.health / Player.CURRENT.maxHealth));
         double probSmallHealth = Math.exp(((double) -3 * (Player.CURRENT.health - 20) / Player.CURRENT.maxHealth));

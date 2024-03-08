@@ -14,7 +14,7 @@ public class Tile {
         return INDEXED_TILES.contains(String.valueOf(t));
     }
 
-    static boolean isSolid(char t) {
+    public static boolean isSolid(char t) {
         return SOLID_TILES.contains(String.valueOf(t));
     }
 

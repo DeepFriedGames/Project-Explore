@@ -1,12 +1,14 @@
 package com.shdwfghtr.entity;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.shdwfghtr.explore.Asset;
+
 import com.shdwfghtr.explore.World;
 
 public class Spawner {
-    
-    public final Entity entity;
+
+	private static final Vector2 VECTOR2 = new Vector2();
+	public final Entity entity;
     private float x, y, width, height;
 	
 	public Spawner(Entity e) {
@@ -18,7 +20,7 @@ public class Spawner {
 		try {
 			entity.respawn();
 			entity.setBounds(x, y, width, height);
-			entity.left = Asset.RANDOM.nextBoolean();
+			entity.left = MathUtils.randomBoolean();
 			World.CURRENT.addEntity(entity);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -33,6 +35,6 @@ public class Spawner {
     }
     
     public Vector2 getCenter() {
-        return com.shdwfghtr.explore.Asset.VECTOR2.set(x + width/2, y + height/2);
+        return VECTOR2.set(x + width/2, y + height/2);
     }
 }

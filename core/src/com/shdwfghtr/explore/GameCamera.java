@@ -4,10 +4,13 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
+import com.shdwfghtr.asset.TimeService;
 import com.shdwfghtr.entity.Entity;
 import com.shdwfghtr.entity.Player;
 
 public class GameCamera extends OrthographicCamera {
+	public static final int WIDTH = Sector.pWIDTH;
+	public static final int HEIGHT = Sector.WIDTH * 10;
 	private static final Rectangle RECTANGLE = new Rectangle();
 	private static final Vector3 POSITION = new Vector3();  //target camera position
 	private static final Vector3 SHAKE = new Vector3();  //amount of camera shake to be applied
@@ -16,8 +19,8 @@ public class GameCamera extends OrthographicCamera {
 
 	private float padding = Tile.WIDTH, trauma = 0, maxAngle = 4, maxOffsetX = 12, maxOffsetY = 9;
 
-	GameCamera() {
-		super(Asset.CAM_WIDTH, Asset.CAM_HEIGHT);
+	public GameCamera() {
+		super(WIDTH, HEIGHT);
 	}
 
 	@Override
@@ -61,12 +64,12 @@ public class GameCamera extends OrthographicCamera {
 			Sector sector = World.CURRENT.getSector(Player.CURRENT.getCenterX(), Player.CURRENT.getCenterY());
 			if(!sector.UP && POSITION.y + viewportHeight * zoom / 2 > sector.getTop())
 				POSITION.y = sector.getTop() - viewportHeight * zoom / 2;
-			if(!sector.DOWN && POSITION.y - viewportHeight * zoom / 2 < sector.getY())
-				POSITION.y = sector.getY() + viewportHeight * zoom / 2;
+			if(!sector.DOWN && POSITION.y - viewportHeight * zoom / 2 < sector.y)
+				POSITION.y = sector.y + viewportHeight * zoom / 2;
 			if(!sector.RIGHT && POSITION.x + viewportWidth * zoom / 2 > sector.getRight())
 				POSITION.x = sector.getRight() - viewportWidth * zoom / 2;
-			if(!sector.LEFT && POSITION.x - viewportWidth * zoom / 2 < sector.getX())
-				POSITION.x = sector.getX() + viewportWidth * zoom / 2;
+			if(!sector.LEFT && POSITION.x - viewportWidth * zoom / 2 < sector.x)
+				POSITION.x = sector.x + viewportWidth * zoom / 2;
 
 			//smoothly move camera to target position using asymptotic averaging
 			float dx = POSITION.x - position.x, dy = POSITION.y - position.y;
@@ -74,7 +77,7 @@ public class GameCamera extends OrthographicCamera {
 			position.y += dy * (dy > 0 ? UP_WEIGHT : DN_WEIGHT);
 
 			//camera shake
-			float time = Asset.TIME;
+			float time = TimeService.GetTime();
 			float shake = trauma * trauma;  //trauma cubed "feels" best
 			float angle = maxAngle * shake * PERLIN.getFloat(time, -1, 1);
 			SHAKE.x = maxOffsetX * shake * PERLIN.getFloat(time + 1, -1, 1);

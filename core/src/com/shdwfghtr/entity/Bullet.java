@@ -1,12 +1,18 @@
 package com.shdwfghtr.entity;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Timer;
+import com.shdwfghtr.asset.InventoryService;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GameCamera;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
+import com.shdwfghtr.screens.GameScreen;
 
 
 public class Bullet extends Entity  implements Pool.Poolable {
@@ -18,8 +24,9 @@ public class Bullet extends Entity  implements Pool.Poolable {
     };
     private static final float TRAUMA_RATIO = 0.1f / 6; //0.1 trauma for every 3 power
     static final float SPEED = 6f;
+    private static final Vector2 VECTOR2 = new Vector2();
     Entity target;
-    final Timer rangeTimer = new Timer(0.18f) {
+    final TimeService.Timer rangeTimer = new TimeService.Timer(0.18f) {
         @Override
         public boolean onCompletion() {
             setDelete(true);
@@ -36,15 +43,15 @@ public class Bullet extends Entity  implements Pool.Poolable {
     @Override
     public void update(float delta) {
         super.update(delta);
-        if(!Asset.CAMERA.getBox().overlaps(getBox()))
+        if(!GdxGame.getCamera().getBox().overlaps(getBox()))
             destroy();
 
         if(target != null) {
-            Asset.VECTOR2.set(target.getCenter().sub(getCenterX(), getCenterY()).limit(speed));
-            if(Asset.VECTOR2.angle() > d.angle())
-                d.setAngle(d.angle() + 5);
-            else if (Asset.VECTOR2.angle() < d.angle())
-                d.setAngle(d.angle() - 5);
+            VECTOR2.set(target.getCenter().sub(getCenterX(), getCenterY()).limit(speed));
+            if(VECTOR2.angleDeg() > d.angleDeg())
+                d.setAngleDeg(d.angleDeg() + 5);
+            else if (VECTOR2.angleDeg() < d.angleDeg())
+                d.setAngleDeg(d.angleDeg() - 5);
         }
     }
 
@@ -58,10 +65,11 @@ public class Bullet extends Entity  implements Pool.Poolable {
     @Override
     public void checkCollisions() {
         if(World.CURRENT.isBlocked(getCenterX(), getCenterY())) {
-            if (!Player.CURRENT.itemActive("phase_shot")) destroy();
+            if (!InventoryService.isActive("phase_shot")) destroy();
             World.CURRENT.breakTile(getCenterX(), getCenterY());
-            if(getName().matches("missile"))
-                Asset.CAMERA.addTrauma(power * TRAUMA_RATIO);
+            if(getName().matches("missile")){
+                GdxGame.getCamera().addTrauma(power * TRAUMA_RATIO);
+            }
         }
     }
 
@@ -71,10 +79,10 @@ public class Bullet extends Entity  implements Pool.Poolable {
     }
 
     @Override
-    void destroy() {
-        ParticleEffectPool.PooledEffect effect = Asset.getParticles().obtain("bullet", false);
+    public void destroy() {
+        ParticleEffectPool.PooledEffect effect = GdxGame.particleService.obtain("bullet", false);
         effect.setPosition(getCenterX(), getCenterY());
-        Asset.getParticles().add(effect);
+        GdxGame.particleService.add(effect);
         POOL.free(this);
         super.destroy();
     }

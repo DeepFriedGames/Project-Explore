@@ -1,18 +1,22 @@
 package com.shdwfghtr.entity;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.utils.Array;
-import com.shdwfghtr.explore.Asset;
+import com.badlogic.gdx.math.Rectangle;
+import com.shdwfghtr.asset.DataService;
+import com.shdwfghtr.asset.TimeService;
+
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.Tile;
-import com.shdwfghtr.explore.Timer;
 import com.shdwfghtr.explore.World;
+import com.shdwfghtr.screens.GameScreen;
 
 public class Door extends Entity {
 	private boolean open = false;
 	private float animationTime;
-	final Timer openTimer = new Timer(5) {
+	final TimeService.Timer openTimer = new TimeService.Timer(5) {
         @Override
         public boolean onCompletion() {
             if (getBox().overlaps(Player.CURRENT.getBox())) {
@@ -33,7 +37,7 @@ public class Door extends Entity {
     private Animation<TextureRegion> lockedAnimation;
 
     public Door(String name, float x, float y) {
-		super(name, x, y, Asset.getEntityAtlas().findRegion(name).getRegionWidth(), Asset.getEntityAtlas().findRegion(name).getRegionHeight());
+		super(name, x, y, GdxGame.textureAtlasService.findEntityRegion(name).getRegionWidth(), GdxGame.textureAtlasService.findEntityRegion(name).getRegionHeight());
         drawLayer = DrawLayer.FOREGROUND;
 	}
 
@@ -43,9 +47,9 @@ public class Door extends Entity {
         String lockedName = unlockedName.concat("_locked");
 
         this.unlockedAnimation = new Animation<TextureRegion>(0.1f,
-                world.entityAtlas.findRegions(unlockedName), Animation.PlayMode.NORMAL);
+                GdxGame.textureAtlasService.findEntityRegions(unlockedName), Animation.PlayMode.NORMAL);
         this.lockedAnimation = new Animation<TextureRegion>(0.1f,
-                world.entityAtlas.findRegions(lockedName), Animation.PlayMode.NORMAL);
+                GdxGame.textureAtlasService.findEntityRegions(lockedName), Animation.PlayMode.NORMAL);
 
         if(this.name.contains("locked"))
             setAnimation(this.lockedAnimation);
@@ -87,17 +91,18 @@ public class Door extends Entity {
             openTimer.reset();
         }
         else if(!(e instanceof Player)) {
-            if(!Asset.CAMERA.getBox().contains(e.getBox())) e.setDelete(true);
+            if(!GdxGame.getCamera().getBox().contains(e.getBox())) e.setDelete(true);
         }
     }
     
-    public boolean isLocked() {	return Asset.DATA.getBoolean(Entity.getSaveString(this));	}
+    public boolean isLocked() {	return DataService.load(World.CURRENT, this);
+    }
 
 	private void setOpen(boolean b) {
 		if(!isLocked()) {
-            if(Asset.CAMERA.getBox().overlaps(getBox())) {
-                if (b) Asset.getMusicHandler().playSound("door_open", 1, 1, (getCenterX() - Player.CURRENT.getCenterY()) / 16f);
-                else Asset.getMusicHandler().playSound("door_close", 1, 1, (getCenterX() - Player.CURRENT.getCenterY()) / 16f);
+            if(GdxGame.getCamera().getBox().overlaps(getBox())) {
+                if (b) GdxGame.audioService.playSound("door_open", 1, 1, (getCenterX() - Player.CURRENT.getCenterY()) / 16f);
+                else GdxGame.audioService.playSound("door_close", 1, 1, (getCenterX() - Player.CURRENT.getCenterY()) / 16f);
             }
 			if(b) animationTime = 0;
 			else animationTime = getAnimation().getFrameDuration() * 3;
@@ -108,7 +113,6 @@ public class Door extends Entity {
 	public void setLocked(boolean locked) {
 		if(name.contains("_locked") && !locked) this.name = name.replace("_locked", "");
         else if(!name.contains("_locked") && locked) this.name = name.concat("_locked");
-        Asset.DATA.putBoolean(Entity.getSaveString(this), locked);
-        Asset.DATA.flush();
+        DataService.save(this);
 	}
 }

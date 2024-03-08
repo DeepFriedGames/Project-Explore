@@ -1,21 +1,40 @@
-package com.shdwfghtr.explore;
+package com.shdwfghtr.asset;
 
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 
-public class MusicHandler {
+public class AudioService {
+    private final AssetManager assetManager;
     private Music music;
+    private Music queue;
     private float fadeTime = 3;
-    private float MAX_VOLUME = Asset.OPTIONS.getFloat("volume");
+    private float MAX_VOLUME = OptionsService.GetVolume();
     private float volume = MAX_VOLUME;
     private MusicState currentState, previousState;
-	
-	public void setMusic(String name) {
+    
+    public AudioService(AssetManagerService assetService) {
+        this.assetManager = assetService.getAssetManager();
+    }
+
+    public void queueMusic(String name) {
         Music m = null;
-        if(Asset.getManager().isLoaded("audio/" + name + ".ogg", Music.class))
-            m = Asset.getManager().get("audio/" + name + ".ogg", Music.class);
+        if(assetManager.isLoaded("audio/" + name + ".ogg", Music.class))
+            m = assetManager.get("audio/" + name + ".ogg", Music.class);
         else System.out.println("audio/" + name + ".ogg not loaded!");
-        setMusic(m, true);
+        queueMusic(m);
+    }
+
+    public void queueMusic(Music m) {
+        queue = m;
+    }
+
+    public void setMusic(String name, boolean loop) {
+        Music m = null;
+        if(assetManager.isLoaded("audio/" + name + ".ogg", Music.class))
+            m = assetManager.get("audio/" + name + ".ogg", Music.class);
+        else System.out.println("audio/" + name + ".ogg not loaded!");
+        setMusic(m, loop);
     }
 
     public void setMusic(Music m, boolean loop) {
@@ -33,38 +52,38 @@ public class MusicHandler {
             music.play();
         }
     }
-    
+
     public void playSound(String name) {
-        if(Asset.getManager().isLoaded("audio/" + name + ".wav", Sound.class)) {
-            Sound s = Asset.getManager().get("audio/" + name + ".wav", Sound.class);
+        if(assetManager.isLoaded("audio/" + name + ".wav", Sound.class)) {
+            Sound s = assetManager.get("audio/" + name + ".wav", Sound.class);
             s.play(MAX_VOLUME);
         } else System.out.println("audio/" + name + ".wav not loaded!");
     }
-	
-	public void playSound(String name, float vol) {
-		if(Asset.getManager().isLoaded("audio/" + name + ".wav", Sound.class)) {
-            Sound s = Asset.getManager().get("audio/" + name + ".wav", Sound.class);
+
+    public void playSound(String name, float vol) {
+        if(assetManager.isLoaded("audio/" + name + ".wav", Sound.class)) {
+            Sound s = assetManager.get("audio/" + name + ".wav", Sound.class);
             s.play(vol * MAX_VOLUME);
         } else System.out.println("audio/" + name + ".wav not loaded!");
     }
-    
+
     public void playSound(String name, float vol, float pitch, float pan) {
-        if(Asset.getManager().isLoaded("audio/" + name + ".wav", Sound.class)) {
-            Sound s = Asset.getManager().get("audio/" + name + ".wav", Sound.class);
+        if(assetManager.isLoaded("audio/" + name + ".wav", Sound.class)) {
+            Sound s = assetManager.get("audio/" + name + ".wav", Sound.class);
             s.play(vol * MAX_VOLUME, pitch, pan);
         } else System.out.println("audio/" + name + ".wav not loaded!");
     }
 
     public long playSound(String name, float vol, float pitch, float pan, boolean loop) {
-        if(Asset.getManager().isLoaded("audio/" + name + ".wav", Sound.class)) {
-            Sound s = Asset.getManager().get("audio/" + name + ".wav", Sound.class);
+        if(assetManager.isLoaded("audio/" + name + ".wav", Sound.class)) {
+            Sound s = assetManager.get("audio/" + name + ".wav", Sound.class);
             long id = s.play(vol * MAX_VOLUME, pitch, pan);
             s.setLooping(id, loop);
             return id;
         } else System.out.println("audio/" + name + ".wav not loaded!");
         return 0;
     }
-    
+
     public void update(float delta) {
         if(music != null) {
             switch(currentState) {
@@ -110,14 +129,17 @@ public class MusicHandler {
                     }
                     break;
             }
+        } else if(queue != null) {
+            music = queue;
+            queue = null;
         }
     }
-    
+
     private void setState(MusicState state) {
         previousState = currentState;
         currentState = state;
     }
-    
+
     public void fadeIn(float duration) {
         fadeTime = duration;
         setState(MusicState.FADEIN);
@@ -127,7 +149,7 @@ public class MusicHandler {
         fadeTime = duration;
         setState(MusicState.FADEOUT);
     }
-    
+
     public void setVolume(float amount) {
         volume = amount * MAX_VOLUME;
         music.setVolume(volume);
@@ -137,13 +159,13 @@ public class MusicHandler {
         MAX_VOLUME = amount;
         volume = MAX_VOLUME;
         music.setVolume(MAX_VOLUME);
-        Asset.OPTIONS.putFloat("volume", MAX_VOLUME);
-        Asset.OPTIONS.flush();
+        OptionsService.SetVolume(MAX_VOLUME);
     }
 
     public float getMaxVolume() { return MAX_VOLUME; }
-    
+
     public enum MusicState {
         EJECTED, PAUSED, FADEIN, FADEOUT, PLAYING, STOPPED, LOOPING
     }
+
 }

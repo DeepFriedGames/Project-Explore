@@ -4,13 +4,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Timer;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
 
 public class Entity extends Sprite {
@@ -40,7 +42,7 @@ public class Entity extends Sprite {
 	}
 
 	public Entity(String name) {
-	    super(Asset.getEntityAtlas().findRegion(name));
+	    super(GdxGame.textureAtlasService.findEntityRegion(name));
 	    this.name = name;
     }
 
@@ -65,11 +67,12 @@ public class Entity extends Sprite {
     }
 
     public void loadAnimation(World world) {
-        Array<TextureRegion> regions = new Array<TextureRegion>();
-        if(Asset.getEntityAtlas().findRegion(name) != null)
-            regions.addAll(world.entityAtlas.findRegions(name));
+        Array<TextureRegion> frames = new Array<>();
+        Array<TextureAtlas.AtlasRegion> regions = GdxGame.textureAtlasService.findEntityRegions(name);
+        if(regions != null)
+            frames.addAll(regions);
 
-        setAnimation(new Animation<TextureRegion>(0.2f, regions, Animation.PlayMode.LOOP_PINGPONG));
+        setAnimation(new Animation<>(0.2f, frames, Animation.PlayMode.LOOP_PINGPONG));
     }
 
 	public void draw(Batch batch) {
@@ -79,7 +82,7 @@ public class Entity extends Sprite {
 
             setFlip(left, false);
 
-            if (!hurt || Asset.RANDOM.nextBoolean())
+            if (!hurt || MathUtils.randomBoolean())
                 super.draw(batch);
         } catch (Exception e) {
             System.out.println(name + " cannot be drawn");
@@ -146,7 +149,7 @@ public class Entity extends Sprite {
 		return delete;
 	}
 
-	void destroy() {
+	public void destroy() {
 		setDelete(true);
 	}
 
@@ -171,21 +174,7 @@ public class Entity extends Sprite {
         return name;
     }
 
-    public static String getSaveString(Entity e) {
-        String str = e.getName().replace("_locked", "") + ","; //the _locked tag is cumbersome for saving
-        str = str.concat(World.CURRENT.name + ",");
-        str = str.concat(e.getX() + "," + e.getY());
-        return str;
-    }
-
-    public static String getSaveString(World world, Entity e) {
-        String str = e.getName().replace("_locked", "") + ","; //the _locked tag is cumbersome for saving
-        str = str.concat(world.name + ",");
-        str = str.concat(e.getX() + "," + e.getY());
-        return str;
-    }
-
-    protected static class HurtTimer extends Timer implements Pool.Poolable {
+    protected static class HurtTimer extends TimeService.Timer implements Pool.Poolable {
         public Entity entity;
 
         HurtTimer() {

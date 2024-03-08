@@ -3,8 +3,9 @@ package com.shdwfghtr.entity;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Timer;
+import com.badlogic.gdx.math.MathUtils;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
 
 public class Boss extends Enemy {
@@ -30,7 +31,7 @@ public class Boss extends Enemy {
             @Override
             public void onCompletion(Music music) {
                 main_music.setVolume(0.7f);
-                Asset.getMusicHandler().setMusic(main_music, true);
+                GdxGame.audioService.setMusic(main_music, true);
             }
         });
     }
@@ -43,8 +44,8 @@ public class Boss extends Enemy {
         final Boss boss = this;
         final ParticleEffectPool.PooledEffect[] effects = new ParticleEffectPool.PooledEffect[size];
         for(int i=0; i<size; i++) {
-            final ParticleEffectPool.PooledEffect effect = Asset.getParticles().obtain("explosion", false);
-            effect.setPosition(Asset.RANDOM.nextInt((int) getWidth()) + getX(), Asset.RANDOM.nextInt((int) getHeight()) + getY());
+            final ParticleEffectPool.PooledEffect effect = GdxGame.particleService.obtain("explosion", false);
+            effect.setPosition(MathUtils.random((int) getWidth()) + getX(), MathUtils.random((int) getHeight()) + getY());
             effects[i] = effect;
         }
 
@@ -52,14 +53,14 @@ public class Boss extends Enemy {
             @Override
             public void update(float delta) {
                 for(ParticleEffectPool.PooledEffect effect : effects) {
-                    if(Asset.RANDOM.nextFloat() < 0.05f) {
-                        Asset.getParticles().add(effect);
-                        Asset.getMusicHandler().playSound("explosion");
-                        float rx = Asset.RANDOM.nextInt((int) this.getWidth()) + this.getX();
-                        float ry = Asset.RANDOM.nextInt((int) this.getHeight()) + this.getY();
+                    if(MathUtils.random() < 0.05f) {
+                        GdxGame.particleService.add(effect);
+                        GdxGame.audioService.playSound("explosion");
+                        float rx = MathUtils.random((int) this.getWidth()) + this.getX();
+                        float ry = MathUtils.random((int) this.getHeight()) + this.getY();
                         effect.setPosition(rx, ry);
-                        if(Asset.RANDOM.nextFloat() < 0.2f) {
-                            PooledItem pooledItemDrop = new PooledItem(Item.GENERIC_ITEMS.get(Asset.RANDOM.nextInt(Item.GENERIC_ITEMS.size())), rx, ry);
+                        if(MathUtils.random() < 0.2f) {
+                            PooledItem pooledItemDrop = new PooledItem(Item.GENERIC_ITEMS.get(MathUtils.random(Item.GENERIC_ITEMS.size())), rx, ry);
                             pooledItemDrop.lifeTimer.reset();
                             world.addEntity(pooledItemDrop);
                         }
@@ -73,24 +74,24 @@ public class Boss extends Enemy {
                 world.addEntity(new Item("oxygen_tank", getRight(), getY()));
                 super.destroy();
                 for(ParticleEffectPool.PooledEffect effect : effects)
-                    Asset.getParticles().remove(effect);
+                    GdxGame.particleService.remove(effect);
             }
 
             @Override
             public void draw(Batch batch) {
-                if(Asset.RANDOM.nextBoolean())
+                if(MathUtils.randomBoolean())
                     batch.draw(boss.getAnimation().getKeyFrame(0), this.getX(), this.getY());
             }
         };
         world.addEntity(explosion);
-        Asset.getMusicHandler().fadeOut(3);
+        GdxGame.audioService.fadeOut(3);
         door.setLocked(false);
-        Asset.TIMERS.add(new Timer(3) {
+        TimeService.addTimer(new TimeService.Timer(3) {
             @Override
             public boolean onCompletion() {
                 explosion.destroy();
-                Asset.getMusicHandler().fadeIn(3);
-                Asset.getMusicHandler().setMusic("World" + world.index);
+                GdxGame.audioService.fadeIn(3);
+                GdxGame.audioService.setMusic("World" + world.index, true);
                 return true;
             }
         });

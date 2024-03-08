@@ -2,8 +2,8 @@ package com.shdwfghtr.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.shdwfghtr.entity.Player;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.DataService;
+import com.shdwfghtr.asset.InventoryService;
 import com.shdwfghtr.explore.GdxGame;
 
 public class GameOverScreen implements Screen {
@@ -11,8 +11,8 @@ public class GameOverScreen implements Screen {
 	@Override
 	public void show() {
         //permadeath!!!
-        Asset.DATA.clear();
-        Player.INVENTORY.clear();
+		DataService.reset();
+		InventoryService.reset();
         ((GdxGame) Gdx.app.getApplicationListener()).setScreen(new TravelScreen());
 
 	}
@@ -49,7 +49,7 @@ public class GameOverScreen implements Screen {
 
 	@Override
 	public void dispose() {
-		Asset.getStage().clear();
+		GdxGame.uiService.getStage().clear();
 
 	}
 

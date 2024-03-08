@@ -2,8 +2,8 @@ package com.shdwfghtr.entity;
 
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Timer;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 
 public class PooledItem extends Item implements Pool.Poolable {
     public static final Pool<PooledItem> POOL = new Pool<PooledItem>() {
@@ -12,7 +12,7 @@ public class PooledItem extends Item implements Pool.Poolable {
             return new PooledItem();
         }
     };
-    final Timer lifeTimer = new Timer(4.2f) {
+    final TimeService.Timer lifeTimer = new TimeService.Timer(4.2f) {
         @Override
         public boolean onCompletion() {
             destroy();
@@ -29,7 +29,7 @@ public class PooledItem extends Item implements Pool.Poolable {
     public void set(String name, float x, float y) {
         this.lifeTimer.reset();
         this.name = name;
-        TextureRegion tr = Asset.getEntityAtlas().findRegion(name);
+        TextureRegion tr = GdxGame.textureAtlasService.findEntityRegion(name);
         int width = tr.getRegionWidth();
         int height = tr.getRegionHeight();
         this.setBounds(x - width / 2, y - height / 2, width, height);
@@ -42,7 +42,7 @@ public class PooledItem extends Item implements Pool.Poolable {
     }
     
     @Override
-    void destroy() {
+    public void destroy() {
         super.destroy();
         POOL.free(this);
     }

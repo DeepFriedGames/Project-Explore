@@ -1,10 +1,12 @@
 package com.shdwfghtr.entity;
 
-import com.badlogic.gdx.audio.Music;
-import com.shdwfghtr.explore.Asset;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Rectangle;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.Tile;
-import com.shdwfghtr.explore.Timer;
 import com.shdwfghtr.explore.World;
+import com.shdwfghtr.screens.GameScreen;
 
 public class Bergamot extends Boss {
     private Door door = null;
@@ -13,7 +15,7 @@ public class Bergamot extends Boss {
     private Snail snail;
     private float[] snailPos;
     private Wasp wasp;
-    private transient Timer spawnTimer;
+    private transient TimeService.Timer spawnTimer;
 
     public Bergamot(World world, float x, float y) {
         super("boss_bergamot_body", x, y);
@@ -25,13 +27,14 @@ public class Bergamot extends Boss {
 
     @Override
     public void initialize(final World world) {
-        intro_music = Asset.getManager().get("audio/Bergamot_Intro.ogg", Music.class);
-        main_music = Asset.getManager().get("audio/Bergamot.ogg", Music.class);
+        GdxGame.audioService.setMusic("Bergamot_Intro.ogg", false);
+        GdxGame.audioService.fadeIn(1);
+        GdxGame.audioService.queueMusic("Bergamot.ogg");
         wormHives = new Enemy[2];
         Enemy[] vines = new Enemy[4];
         crawlers = new Crawler[]{new Crawler(), new Crawler()};
         snail = new Snail();
-        spawnTimer = new Timer(2) {
+        spawnTimer = new TimeService.Timer(2) {
             @Override
             public boolean onCompletion() {
                 int size = crawlers.length;
@@ -108,12 +111,8 @@ public class Bergamot extends Boss {
 
     @Override
     public void update(float delta) {
-        if(!main_music.isPlaying() && !intro_music.isPlaying()) {
-            Asset.getMusicHandler().setVolume(1);
-            Asset.getMusicHandler().setMusic(intro_music, false);
-        }
         if(door == null) {
-            Asset.MESSAGES.add("-BERGAMOT-");
+            GdxGame.uiService.addMessage("-BERGAMOT-");
             float minDst2 = 1000000f;
             for(Entity e : world.getActiveEntities()) {
                 if (!(e instanceof Door)) continue;
@@ -138,7 +137,8 @@ public class Bergamot extends Boss {
                 world.addEntity(wasp);
             }
         } else {
-            if (!Asset.CAMERA.getBox().overlaps(wasp.getBox()) && Player.CURRENT.getCenterY() < getY()) {
+            if (!GdxGame.getCamera().getBox().overlaps(wasp.getBox())
+                    && Player.CURRENT.getCenterY() < getY()) {
                 wasp.setPosition(getCenterX() - wasp.getWidth() / 2, getCenterY() - wasp.getHeight() / 2);
                 wasp.d.set(0, -wasp.speed);
             }
@@ -152,19 +152,19 @@ public class Bergamot extends Boss {
 //
 //    @Override
 //    public void draw(Batch batch) {
-//        if(!hurt || Asset.RANDOM.nextBoolean())
+//        if(!hurt || MathUtils.randomBoolean())
 //            batch.draw(getAnimation().getKeyFrame(Asset.TIME), getX() - 16, getY() - 16);
 //    }
 
     @Override
     public void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("boss_damage", 1, 1, (getCenterX() - Player.CURRENT.getCenterX()) / 16f);
+        if(!hurt) GdxGame.audioService.playSound("boss_damage", 1, 1, (getCenterX() - Player.CURRENT.getCenterX()) / 16f);
         super.takeDamage(amount);
     }
 
     @Override
     public void destroy() {
         super.destroy();
-        if(Asset.TIMERS.contains(spawnTimer)) Asset.TIMERS.remove(spawnTimer);
+        TimeService.removeTimer(spawnTimer);
     }
 }

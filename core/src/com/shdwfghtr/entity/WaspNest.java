@@ -1,8 +1,11 @@
 package com.shdwfghtr.entity;
 
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Timer;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Rectangle;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
+import com.shdwfghtr.screens.GameScreen;
 
 /**
  * Created by Stuart on 7/14/2015.
@@ -10,7 +13,21 @@ import com.shdwfghtr.explore.World;
  */
 public class WaspNest extends Enemy {
     private Wasp wasp;
-    private final Timer spawnTimer = new Timer(1.2f);
+    private final TimeService.Timer spawnTimer = new TimeService.Timer(1.2f) {
+        @Override
+        public boolean onCompletion() {
+            if (wasp == null && Player.CURRENT.getCenterY() < getY()) {
+                wasp = Wasp.POOL.obtain();
+                wasp.respawn();
+                wasp.setPosition(getCenterX() - wasp.getWidth() / 2, getCenterY() - wasp.getHeight() / 2);
+                wasp.d.set(0, -wasp.speed);
+                World.CURRENT.addEntity(wasp);
+                spawnTimer.reset();
+                return true;
+            }
+            return false;
+        }
+    };
 
     public WaspNest(float x, float y) {
         super("enemy_wasp_nest", x, y);
@@ -21,17 +38,9 @@ public class WaspNest extends Enemy {
 
     @Override
     public void update(float delta) {
-        if(wasp == null && spawnTimer.isComplete()) {
-            if (Player.CURRENT.getCenterY() < getY()) {
-                wasp = Wasp.POOL.obtain();
-                wasp.respawn();
-                wasp.setPosition(getCenterX() - wasp.getWidth() / 2, getCenterY() - wasp.getHeight() / 2);
-                wasp.d.set(0, -wasp.speed);
-                World.CURRENT.addEntity(wasp);
-                spawnTimer.reset();
-            }
-        } else if(wasp != null){
-            if (!Asset.CAMERA.getBox().overlaps(wasp.getBox()) && Player.CURRENT.getCenterY() < getY()) {
+        if(wasp != null){
+            if (!GdxGame.getCamera().getBox().overlaps(wasp.getBox())
+                    && Player.CURRENT.getCenterY() < getY()) {
                 wasp.setPosition(getCenterX() - wasp.getWidth() / 2, getCenterY() - wasp.getHeight() / 2);
                 wasp.d.set(0, -wasp.speed);
             }
@@ -44,7 +53,7 @@ public class WaspNest extends Enemy {
 
     @Override
     public void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("damage1");
+        if(!hurt) GdxGame.audioService.playSound("damage1");
         super.takeDamage(amount);
     }
 

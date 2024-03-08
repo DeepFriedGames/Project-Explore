@@ -1,16 +1,17 @@
 package com.shdwfghtr.entity;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
-import com.shdwfghtr.explore.Tile;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
+import com.shdwfghtr.screens.GameScreen;
 
 public class Dropper extends Enemy {
     private boolean FALL;
@@ -37,9 +38,9 @@ public class Dropper extends Enemy {
                 //spews rocks out in random directions
                     for(int deg=60; deg<=120; deg+=30) {
                         Rock rock = Rock.POOL.obtain();
-                        rock.setSize(Asset.RANDOM.nextInt(2) + 6, Asset.RANDOM.nextInt(2) + 5);
+                        rock.setSize(MathUtils.random(6, 8), MathUtils.random(5, 7));
                         rock.setPosition(getCenterX() - rock.getWidth() / 2, getCenterY() - rock.getHeight() / 2);
-                        rock.d.setAngle(deg);
+                        rock.d.setAngleDeg(deg);
                         World.CURRENT.addEntity(rock);
                     }
             }
@@ -50,7 +51,7 @@ public class Dropper extends Enemy {
 
     @Override
 	public void draw(Batch batch) {
-        Array<TextureAtlas.AtlasRegion> regions = World.CURRENT.entityAtlas.findRegions(name);
+        Array<TextureAtlas.AtlasRegion> regions = GdxGame.textureAtlasService.findEntityRegions(name);
         Animation.PlayMode playmode = Animation.PlayMode.NORMAL;
         float angle = d.angle();
         if(!FALL) {
@@ -72,7 +73,7 @@ public class Dropper extends Enemy {
     
     @Override
     public void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("enemy_damage");
+        if(!hurt) GdxGame.audioService.playSound("enemy_damage");
         super.takeDamage(amount);
     }
 
@@ -104,7 +105,7 @@ public class Dropper extends Enemy {
         public void update(float delta) {
             super.update(delta);
             d.y -= World.CURRENT.getGravity();
-            if(!Asset.CAMERA.getBox().overlaps(this.getBox()))
+            if(!GdxGame.getCamera().getBox().overlaps(this.getBox()))
                 setDelete(true);
             setRotation(d.angle());
         }

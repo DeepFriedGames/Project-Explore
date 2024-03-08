@@ -2,14 +2,14 @@ package com.shdwfghtr.input;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.ControllerService;
 
 public class KeyboardHandler extends InputHandler {
 
     @Override
     public boolean isInputDown(String input) {
         try {
-            return Gdx.input.isKeyPressed(Asset.CONTROLS.getInteger(input));
+            return Gdx.input.isKeyPressed(ControllerService.getInput(input));
         } catch (Exception e) {
             e.printStackTrace();
             return false;

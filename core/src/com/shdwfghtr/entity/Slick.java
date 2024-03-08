@@ -9,9 +9,10 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.utils.Pool;
 import com.badlogic.gdx.utils.Pool.Poolable;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.OptionsService;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.Tile;
-import com.shdwfghtr.explore.Timer;
 import com.shdwfghtr.explore.World;
 
 public class Slick extends Entity implements Poolable {
@@ -24,7 +25,7 @@ public class Slick extends Entity implements Poolable {
         
     
     private final transient ParticleEffectPool.PooledEffect effect;
-    private final Timer lifeTimer = new Timer(14.0F) {
+    private final TimeService.Timer lifeTimer = new TimeService.Timer(14.0F) {
         public boolean onCompletion() {
             destroy();
             return true;
@@ -34,20 +35,20 @@ public class Slick extends Entity implements Poolable {
     private Slick() {
         super("enemy_slick");
         setSize(Tile.WIDTH, Tile.HEIGHT);
-        this.effect = Asset.getParticles().obtain("slick", false);
+        this.effect = GdxGame.particleService.obtain("slick", false);
         this.drawLayer = DrawLayer.FOREGROUND;
     }
 
     @Override
     public void draw(Batch batch) {
-        if(!Asset.CONTROLS.getBoolean("particles")) super.draw(batch);
+        if(!OptionsService.AreParticlesEnabled()) super.draw(batch);
     }
 
     public void set(float x, float y) {
         this.setPosition(x, y);
         this.lifeTimer.reset();
         this.effect.setPosition(getX(), getTop());
-        Asset.getParticles().add(this.effect);
+        GdxGame.particleService.add(this.effect);
     }
 
     @Override
@@ -58,7 +59,7 @@ public class Slick extends Entity implements Poolable {
     }
 
     @Override
-    void destroy() {
+    public void destroy() {
         super.destroy();
         POOL.free(this);
     }

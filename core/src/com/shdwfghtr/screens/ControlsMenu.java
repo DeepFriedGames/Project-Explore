@@ -8,6 +8,7 @@ import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
@@ -23,23 +24,25 @@ import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Array;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.ControllerService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.input.GamepadHandler;
 import com.shdwfghtr.input.TouchHandler;
 
 import java.util.HashMap;
 
 public class ControlsMenu extends Menu {
-	private final Table touchTable = new Table(Asset.getSkin()), dPadTable = new Table();
+	private final Table touchTable = new Table(GdxGame.uiService.getSkin()), dPadTable = new Table();
 	private final HashMap<String, TextButton> inputButtons = new HashMap<String, TextButton>();
 	private final Array<Button> touchButtons = new Array<Button>(TouchHandler.BUTTONS);
 	private final Array<Slider> touchSliders = new Array<Slider>(5);
-	private final Touchpad touchPad = new Touchpad(0, Asset.getSkin());
-	private final Dialog inputDialog = new Dialog("Reset Input", Asset.getSkin());
+	private final Touchpad touchPad = new Touchpad(0, GdxGame.uiService.getSkin());
+	private final Dialog inputDialog = new Dialog("Reset Input", GdxGame.uiService.getSkin());
+	private final Stage stage = GdxGame.uiService.getStage();
 	private String inputKey = null;
 	private CheckBox checkBox;
 	private Cell<Table> touchCell;
-	private Cell dPadCell;
+	private Cell<Actor> dPadCell;
 	private ControllerAdapter adapter;
 
 	ControlsMenu() {
@@ -49,14 +52,15 @@ public class ControlsMenu extends Menu {
 	@Override
 	public void render(float delta) {
 		if(inputButtons.size() > 0) {
-			inputButtons.get("up").setDisabled(Asset.CONTROLS.getBoolean("use_axis"));
-			inputButtons.get("down").setDisabled(Asset.CONTROLS.getBoolean("use_axis"));
-			inputButtons.get("left").setDisabled(Asset.CONTROLS.getBoolean("use_axis"));
-			inputButtons.get("right").setDisabled(Asset.CONTROLS.getBoolean("use_axis"));
-			inputButtons.get("x-axis").setDisabled(!Asset.CONTROLS.getBoolean("use_axis")
-					|| Asset.CONTROLS.getString("controller").matches("touch"));
-			inputButtons.get("y-axis").setDisabled(!Asset.CONTROLS.getBoolean("use_axis")
-					|| Asset.CONTROLS.getString("controller").matches("touch"));
+			if(ControllerService.isUsingAxis()){
+				inputButtons.get("up").setDisabled(true);
+				inputButtons.get("down").setDisabled(true);
+				inputButtons.get("left").setDisabled(true);
+				inputButtons.get("right").setDisabled(true);
+			} else if(ControllerService.isTouch()) {
+				inputButtons.get("x-axis").setDisabled(true);
+				inputButtons.get("y-axis").setDisabled(true);
+			}
 
 			for(TextButton b : inputButtons.values()) {
 				if(b.isDisabled())
@@ -70,11 +74,10 @@ public class ControlsMenu extends Menu {
 		if(touchSliders.size > 0) {
 			Slider[] sliders = touchSliders.toArray(Slider.class);
 			for(Slider slider : sliders)
-				slider.setVisible(Asset.CONTROLS.getString("controller").matches("touch"));
+				slider.setVisible(ControllerService.isTouch());
 		}
 		if(checkBox != null)
-			if(Asset.CONTROLS.getString("controller").matches("gamepad")
-					|| Asset.CONTROLS.getString("controller").matches("touch")) {
+			if(ControllerService.isGamepad() || ControllerService.isTouch()) {
 				checkBox.setVisible(true);
 				checkBox.setDisabled(false);
 				checkBox.setTouchable(Touchable.enabled);
@@ -85,7 +88,7 @@ public class ControlsMenu extends Menu {
 				checkBox.setTouchable(Touchable.disabled);
 			}
 		if(touchTable.hasParent())
-			touchTable.setVisible(Asset.CONTROLS.getString("controller").matches("touch"));
+			touchTable.setVisible(ControllerService.isTouch());
 
 		super.render(delta);
 	}
@@ -94,10 +97,10 @@ public class ControlsMenu extends Menu {
 	public void show() {
 		super.show();
 		int pad = 5;
-
-		inputDialog.setSize(Asset.getStage().getWidth() / 3, Asset.getStage().getHeight() / 3);
-		inputDialog.setPosition((Asset.getStage().getWidth() - inputDialog.getWidth()) / 2,
-				(Asset.getStage().getHeight() - inputDialog.getHeight()) / 2);
+		
+		inputDialog.setSize(stage.getWidth() / 3, stage.getHeight() / 3);
+		inputDialog.setPosition((stage.getWidth() - inputDialog.getWidth()) / 2,
+				(stage.getHeight() - inputDialog.getHeight()) / 2);
 
 		//creates a table with a list of possible inputs to choose from, button names, and current values
 		//values can be customized by clicking buttons.
@@ -112,16 +115,16 @@ public class ControlsMenu extends Menu {
 
 			@Override
 			public boolean axisMoved (Controller controller, int axisCode, float value) {
-				return Asset.CONTROLS.getBoolean("use_axis") && replaceInput(axisCode);
+				return ControllerService.isUsingAxis() && replaceInput(axisCode);
 			}
 		};
 
 		//a Table for the input selections
-		Table selectionTable = new Table(Asset.getSkin());
+		Table selectionTable = new Table(GdxGame.uiService.getSkin());
 
 		//first a list of possible input devices to choose from
-		Label selectLabel = new Label("Choose Input Device:", Asset.getSkin());
-		final SelectBox<String> selectBox = new SelectBox<String>(Asset.getSkin());
+		Label selectLabel = new Label("Choose Input Device:", GdxGame.uiService.getSkin());
+		final SelectBox<String> selectBox = new SelectBox<String>(GdxGame.uiService.getSkin());
 		Array<String> items = new Array<String>();
 		if(Gdx.input.isPeripheralAvailable(Peripheral.HardwareKeyboard)) items.add(" Keyboard");
 		if(Gdx.input.isPeripheralAvailable(Peripheral.MultitouchScreen)) items.add(" Touch Screen");
@@ -134,39 +137,36 @@ public class ControlsMenu extends Menu {
 			}
 		}
 		selectBox.setItems(items);
-		if(Asset.CONTROLS.getString("controller").matches("keyboard")) selectBox.setSelected(" Keyboard");
-		if(Asset.CONTROLS.getString("controller").matches("touch")) selectBox.setSelected(" Touch Screen");
-		if(Asset.CONTROLS.getString("controller").matches("gamepad")) selectBox.setSelected(items.peek());
+		if(ControllerService.isKeyboard()) selectBox.setSelected(" Keyboard");
+		if(ControllerService.isTouch()) selectBox.setSelected(" Touch Screen");
+		if(ControllerService.isGamepad()) selectBox.setSelected(items.peek());
 		selectBox.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
 				if(selectBox.getSelected().contains("Keyboard"))
-					Asset.CONTROLS.putString("controller", "keyboard");
+					ControllerService.setController("keyboard");
 				else if(selectBox.getSelected().contains("Touch Screen"))
-					Asset.CONTROLS.putString("controller", "touch");
+					ControllerService.setController("touch");
 				else {
 					Controller[] controllers = Controllers.getControllers().toArray(Controller.class);
 					for(Controller controller : controllers)
 						if(controller.getName().contains(selectBox.getSelected().substring(1, selectBox.getSelected().length() -  1))) {
-							Asset.CONTROLS.putString("controller", "gamepad");
+							ControllerService.setController("gamepad");
 							GamepadHandler.GAMEPAD = controller;
 						}
 				}
-
-				Asset.CONTROLS.flush();
 			}
 		});
 		selectBox.setName("Select Box");
 
 		//a checkbox allowing users to use a controller's axis
-		checkBox = new CheckBox(" XY Axis", Asset.getSkin());
-		checkBox.setChecked(Asset.CONTROLS.getBoolean("use_axis"));
+		checkBox = new CheckBox(" XY Axis", GdxGame.uiService.getSkin());
+		checkBox.setChecked(ControllerService.isUsingAxis());
 		checkBox.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
-				Asset.CONTROLS.putBoolean("use_axis", !Asset.CONTROLS.getBoolean("use_axis"));
-				Asset.CONTROLS.flush();
-				if(Asset.CONTROLS.getBoolean("use_axis"))
+				ControllerService.setUsingAxis(!ControllerService.isUsingAxis());
+				if(ControllerService.isUsingAxis())
 					dPadCell.setActor(touchPad);
 				else
 					dPadCell.setActor(dPadTable);
@@ -175,23 +175,22 @@ public class ControlsMenu extends Menu {
 		checkBox.setName("Check Box");
 
 		//creates touchscreen options, such as use XYaxis, button padding, button size, button position
-		float size = Asset.CONTROLS.getFloat("touch_size", 64f),
-				padding = Asset.CONTROLS.getFloat("touch_padding", 1f),
-				border = Asset.CONTROLS.getFloat("touch_border", 5f),
-				position = Asset.CONTROLS.getFloat("touch_position", 5f);
+		float size = ControllerService.getTouchSize(),
+				padding = ControllerService.getTouchPadding(),
+				border = ControllerService.getTouchBorder(),
+				position = ControllerService.getTouchPosition();
 
-		final Slider sensitivitySlider = new Slider(0, 32, 1, false, Asset.getSkin());
+		final Slider sensitivitySlider = new Slider(0, 32, 1, false, GdxGame.uiService.getSkin());
 		sensitivitySlider.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
-				Asset.CONTROLS.putFloat("touch_sensitivity", sensitivitySlider.getValue());
-				Asset.CONTROLS.flush();
+				ControllerService.setTouchSensitivity(sensitivitySlider.getValue());
 			}
 		});
-		sensitivitySlider.setValue(Asset.CONTROLS.getFloat("touch_sensitivity", 0.5f));
+		sensitivitySlider.setValue(ControllerService.getTouchSensitivity());
 		sensitivitySlider.setName("Sensitivity Slider");
 
-		final Slider paddingSlider = new Slider(0, 32, 1, false, Asset.getSkin());
+		final Slider paddingSlider = new Slider(0, 32, 1, false, GdxGame.uiService.getSkin());
 		paddingSlider.addListener(new ChangeListener() {
 			final Array<Cell> cells = new Array<Cell>();
 			@Override
@@ -209,14 +208,13 @@ public class ControlsMenu extends Menu {
 
 				touchTable.invalidate();
 
-				Asset.CONTROLS.putFloat("touch_padding", paddingSlider.getValue());
-				Asset.CONTROLS.flush();
+				ControllerService.setTouchPadding(paddingSlider.getValue());
 			}
 		});
 		paddingSlider.setValue(padding);
 		paddingSlider.setName("Padding Slider");
 
-		final Slider sizeSlider = new Slider(8, 96, 2, false, Asset.getSkin());
+		final Slider sizeSlider = new Slider(8, 96, 2, false, GdxGame.uiService.getSkin());
 		sizeSlider.addListener(new ChangeListener() {
 			final Array<Cell> cells = new Array<Cell>();
 			@Override
@@ -234,38 +232,34 @@ public class ControlsMenu extends Menu {
 
 				touchTable.invalidate();
 
-				Asset.CONTROLS.putFloat("touch_size", sizeSlider.getValue());
-				Asset.CONTROLS.flush();
-
+				ControllerService.setTouchSize(sizeSlider.getValue());
 			}
 		});
 		sizeSlider.setValue(size);
 		sizeSlider.setName("Size Slider");
 
 		final Slider borderSlider = new Slider(0, Gdx.graphics.getWidth() / 3,
-				1, false, Asset.getSkin());
+				1, false, GdxGame.uiService.getSkin());
 		borderSlider.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
 				touchTable.padLeft(borderSlider.getValue())
 						.padRight(borderSlider.getValue());
 				touchTable.invalidate();
-				Asset.CONTROLS.putFloat("touch_border", borderSlider.getValue());
-				Asset.CONTROLS.flush();
+				ControllerService.setTouchBorder(borderSlider.getValue());
 			}
 		});
 		borderSlider.setValue(border);
 		borderSlider.setName("Border Slider");
 
 		final Slider positionSlider = new Slider(0,Gdx.graphics.getHeight() - 150,
-				2, true, Asset.getSkin());
+				2, true, GdxGame.uiService.getSkin());
 		positionSlider.addListener(new ChangeListener() {
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
 				touchTable.padBottom(positionSlider.getValue());
 				touchTable.invalidate();
-				Asset.CONTROLS.putFloat("touch_position", positionSlider.getValue());
-				Asset.CONTROLS.flush();
+				ControllerService.setTouchPosition(positionSlider.getValue());
 			}
 		});
 		positionSlider.setValue(position);
@@ -308,13 +302,13 @@ public class ControlsMenu extends Menu {
 
 		//finally, all of the inputs received by the game
 		//these buttons have their own Table as well
-		final Table inputTable = new Table(Asset.getSkin());
+		final Table inputTable = new Table(GdxGame.uiService.getSkin());
 
-		for(final String key : Asset.INPUT_LIST) {
+		for(final String key : ControllerService.INPUT_LIST) {
 			//along with all of the buttons used to change the input values
-			Label buttonLabel = new Label(key.toUpperCase().concat(": "), Asset.getSkin());
+			Label buttonLabel = new Label(key.toUpperCase().concat(": "), GdxGame.uiService.getSkin());
 			buttonLabel.setName(key + " label");
-			final TextButton button = new TextButton(String.valueOf(Asset.CONTROLS.getInteger(key)), Asset.getSkin());
+			final TextButton button = new TextButton(String.valueOf(ControllerService.getInput(key)), GdxGame.uiService.getSkin());
 			button.addListener(new ClickListener() {
 				@Override
 				public void clicked(InputEvent event, float x, float y) {
@@ -326,17 +320,17 @@ public class ControlsMenu extends Menu {
 						inputDialog.text("Press the desired input \nfor " + key.toUpperCase() + " now.");
 						table.addActor(inputDialog);
 
-						if(Asset.CONTROLS.getString("controller").matches("keyboard")) {
+						if(ControllerService.isKeyboard()) {
 							inputDialog.addListener(new InputListener() {
 								@Override
 								public boolean keyDown(InputEvent event, int keycode) {
 									return replaceInput(keycode);
 								}
 							});
-							Asset.getStage().setKeyboardFocus(inputDialog);
-						} else if(Asset.CONTROLS.getString("controller").matches("gamepad"))
+							stage.setKeyboardFocus(inputDialog);
+						} else if(ControllerService.isGamepad())
 							Controllers.addListener(adapter);
-						else if(Asset.CONTROLS.getString("controller").matches("touch")) {
+						else if(ControllerService.isTouch()) {
 							inputDialog.setSize(touchTable.getWidth(), touchTable.getHeight() * 2);
 							inputDialog.add(touchTable).expandX();
 						}
@@ -353,7 +347,7 @@ public class ControlsMenu extends Menu {
 		table.add(selectionTable).pad(pad);
 		table.add(inputTable).pad(pad).row();
 		touchCell = table.add(touchTable).expand().fillX().bottom().colspan(2);
-		Asset.getStage().addActor(table);
+		stage.addActor(table);
 	}
 
 	private void createDPadTouchTable(float size, float padding, float border, float position) {
@@ -373,10 +367,10 @@ public class ControlsMenu extends Menu {
 		dPadTable.add(touchButtons.get(1)).size(size).pad(padding).center().colspan(2);
 		dPadTable.setName("D-Pad Table");
 
-		if(Asset.CONTROLS.getBoolean("use_axis"))
-			dPadCell = touchTable.add(touchPad).size(size * 2).pad(padding).center();
+		if(ControllerService.isUsingAxis())
+			dPadCell = touchTable.add((Actor)touchPad).size(size * 2).pad(padding).center();
 		else
-			dPadCell = touchTable.add(dPadTable);
+			dPadCell = touchTable.add((Actor)dPadTable);
 
 		touchTable.add(touchButtons.get(8)).size(size).pad(padding).expandX().center().bottom();
 		touchTable.add(touchButtons.get(9)).size(size).pad(padding).expandX().center().bottom();
@@ -391,11 +385,10 @@ public class ControlsMenu extends Menu {
 
 	private boolean replaceInput(int keycode) {
 		if(inputKey != null) {
-			Asset.CONTROLS.putInteger(inputKey, keycode);
-			Asset.CONTROLS.flush();
+			ControllerService.setInput(inputKey, keycode);
 			inputButtons.get(inputKey).setText(String.valueOf(keycode));
 			inputKey = null;
-			Asset.getStage().unfocus(inputDialog);
+			stage.unfocus(inputDialog);
 			inputDialog.remove();
 			Controllers.removeListener(adapter);
 			return true;

@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -14,13 +15,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.explore.GameCamera;
 import com.shdwfghtr.explore.GdxGame;
 
 class Menu implements Screen {
 	private final SpriteBatch BATCH = new SpriteBatch();
 	private ParticleEffectPool.PooledEffect STARS;
-	final Table table = new Table(Asset.getSkin());
+	final Table table = new Table(GdxGame.uiService.getSkin());
 	String headerText = "";
 	boolean backButtonPressed = false;
 
@@ -30,9 +31,9 @@ class Menu implements Screen {
 
 	@Override
 	public void show() {
-		Asset.getStage().addActor(table);
-		Asset.getStage().setKeyboardFocus(table);
-		table.setBounds(0, 0, Asset.getStage().getWidth(), Asset.getStage().getHeight());
+		GdxGame.uiService.getStage().addActor(table);
+		GdxGame.uiService.getStage().setKeyboardFocus(table);
+		table.setBounds(0, 0, GdxGame.uiService.getStage().getWidth(), GdxGame.uiService.getStage().getHeight());
 		table.addListener(new InputListener() {
 			@Override
 			public boolean keyUp(InputEvent event, int keycode) {
@@ -46,35 +47,36 @@ class Menu implements Screen {
 		});
 
 		//adds the header to the stage
-		Asset.GLYPH.setText(Asset.getHeaderFont(), headerText);
+		GlyphLayout glyphLayout = new GlyphLayout();
+		glyphLayout.setText(GdxGame.uiService.getHeaderFont(), headerText);
 		Actor header = new Actor() {
 			@Override
 			public void draw(Batch batch, float parentAlpha) {
-				Asset.getHeaderFont().draw(batch, headerText, getX(), getY());
+				GdxGame.uiService.getHeaderFont().draw(batch, headerText, getX(), getY());
 			}
 		};
-		header.setBounds(0, table.getHeight(), table.getWidth(), Asset.GLYPH.height);
+		header.setBounds(0, table.getHeight(), table.getWidth(), glyphLayout.height);
 		table.addActor(header);
 
 		//scale the stars to the right size
-		STARS = Asset.getParticles().obtain("stars", false);
-		STARS.setPosition(Gdx.graphics.getWidth()/2, Gdx.graphics.getHeight()/2);
-		STARS.scaleEffect(Gdx.graphics.getWidth() / Asset.CAM_WIDTH);
-		Asset.getParticles().add(STARS);
+		STARS = GdxGame.particleService.obtain("stars", false);
+		STARS.setPosition(Gdx.graphics.getWidth()/2f, Gdx.graphics.getHeight()/2f);
+		STARS.scaleEffect(Gdx.graphics.getWidth() / GameCamera.WIDTH);
+		GdxGame.particleService.add(STARS);
 
 	}
 
 	@Override
 	public void render(float delta) {
-		Asset.getStage().act(delta);
-		Asset.getParticles().update(delta);
+		GdxGame.uiService.getStage().act(delta);
+		GdxGame.particleService.update(delta);
 
-		BATCH.setProjectionMatrix(Asset.getStage().getCamera().combined);
+		BATCH.setProjectionMatrix(GdxGame.uiService.getStage().getCamera().combined);
 		BATCH.begin();
-		Asset.getParticles().draw(BATCH);
+		GdxGame.particleService.draw(BATCH);
 		BATCH.end();
 
-		Asset.getStage().draw();
+		GdxGame.uiService.getStage().draw();
 
 		if(backButtonPressed) {
 			backButtonPressed = false;
@@ -85,7 +87,7 @@ class Menu implements Screen {
 	void goToScreen(Screen screen) {
 		try {
 			((GdxGame) Gdx.app.getApplicationListener()).setScreen(screen);
-			Asset.getParticles().remove(STARS);
+			GdxGame.particleService.remove(STARS);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -97,7 +99,7 @@ class Menu implements Screen {
 
 	@Override
 	public void resize(int width, int height) {
-		Asset.getStage().getViewport().update(width, height);
+		GdxGame.uiService.getStage().getViewport().update(width, height);
 
 	}
 
@@ -124,7 +126,7 @@ class Menu implements Screen {
 		Controllers.clearListeners();
 		table.clear();
 		table.remove();
-		Asset.getStage().getRoot().clearChildren();
+		GdxGame.uiService.getStage().getRoot().clearChildren();
 
 	}
 
@@ -145,7 +147,7 @@ class Menu implements Screen {
 
 		@Override
 		public void toggle() {
-			Asset.getMusicHandler().playSound("select");
+			GdxGame.audioService.playSound("select");
 		}
 
 	}

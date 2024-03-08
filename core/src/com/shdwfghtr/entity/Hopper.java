@@ -2,8 +2,10 @@ package com.shdwfghtr.entity;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.TimeService;
+import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
 
 public class Hopper extends Enemy {
@@ -21,14 +23,14 @@ public class Hopper extends Enemy {
 	public void update(float delta) {
         super.update(delta);
 		if(onGround()) {
-			if(Asset.RANDOM.nextFloat() < TURN_PROB)
+			if(MathUtils.random() < TURN_PROB)
 				left = !left;
-			if(Asset.RANDOM.nextFloat() < JUMP_PROB)
-				if(Asset.RANDOM.nextBoolean()) {
+			if(MathUtils.random() < JUMP_PROB)
+				if(MathUtils.randomBoolean()) {
 					d.set(speed, JUMP_HEIGHT * 0.6f);
 				} else
 					d.set(speed, JUMP_HEIGHT);
-		} else if(Asset.RANDOM.nextBoolean())
+		} else if(MathUtils.randomBoolean())
 			d.x = speed;
 		
 		if(left) d.x = -Math.abs(d.x);
@@ -37,12 +39,12 @@ public class Hopper extends Enemy {
 	@Override
 	public void draw(Batch batch) {	
         TextureRegion texture;
-		if(onGround()) texture = getAnimation().getKeyFrame(Asset.TIME);
+		if(onGround()) texture = getAnimation().getKeyFrame(TimeService.GetTime());
 		else texture = getAnimation().getKeyFrame(0);
 		if((!texture.isFlipX() && left) || (texture.isFlipX() && !left))
 			texture.flip(true, false);
 		
-		if(!hurt || Asset.RANDOM.nextBoolean())
+		if(!hurt || MathUtils.randomBoolean())
 			batch.draw(texture, getX() - 1, getY());
 	}
 
@@ -80,7 +82,7 @@ public class Hopper extends Enemy {
 
     @Override
     public void takeDamage(float amount) {
-        if(!hurt) Asset.getMusicHandler().playSound("enemy_damage");
+        if(!hurt) GdxGame.audioService.playSound("enemy_damage");
         super.takeDamage(amount);
     }
 

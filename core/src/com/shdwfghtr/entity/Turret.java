@@ -1,9 +1,10 @@
 package com.shdwfghtr.entity;
 
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Pool;
-import com.shdwfghtr.explore.Asset;
+
 import com.shdwfghtr.explore.World;
 
 /**
@@ -11,13 +12,14 @@ import com.shdwfghtr.explore.World;
  * A turret is an enemy which fires bullets in the @Player 's direction
  */
 public class Turret extends Enemy {
+    private static final Vector2 VECTOR2 = new Vector2();
     private final Vector2 pivot = new Vector2();
     private final int angle;
     private float arm_angle;
     
     public Turret(Rectangle tile, World world) {
         super("enemy_smart_turret", tile.x, tile.y);
-        if(Asset.RANDOM.nextBoolean()) this.name = "enemy_turret";
+        if(MathUtils.randomBoolean()) this.name = "enemy_turret";
         this.health = 12;
         this.speed = 0;
         this.power = 0;
@@ -43,22 +45,22 @@ public class Turret extends Enemy {
         if(name.contains("smart")) {
             float dist = Player.CURRENT.getCenter().dst(pivot);
             float frames = dist / Projectile.SPEED;
-            Asset.VECTOR2.set(Player.CURRENT.getCenter());
-            Asset.VECTOR2.add(Player.CURRENT.d.x * frames, Player.CURRENT.d.y * frames);
+            VECTOR2.set(Player.CURRENT.getCenter());
+            VECTOR2.add(Player.CURRENT.d.x * frames, Player.CURRENT.d.y * frames);
         } else
-            Asset.VECTOR2.set(Player.CURRENT.getCenter());
+            VECTOR2.set(Player.CURRENT.getCenter());
         
-        arm_angle = Asset.VECTOR2.sub(pivot).angle();
+        arm_angle = VECTOR2.sub(pivot).angle();
         if(arm_angle < angle) arm_angle = angle;
         else if(arm_angle > angle + 180) arm_angle = angle + 180;
     }
 
 //    @Override
 //    public void draw(Batch batch) {
-//        TextureRegion arm = Asset.getEntityAtlas().findRegion("enemy_turret_arm");
+//        TextureRegion arm = GdxGame.textureAtlasService.findEntityRegion("enemy_turret_arm");
 //        TextureRegion tr = getAnimation().getKeyFrame(Asset.TIME);
 //
-//        if (!hurt || Asset.RANDOM.nextBoolean()) {
+//        if (!hurt || MathUtils.randomBoolean()) {
 //            batch.draw(arm, pivot.x, pivot.y, 0, arm.getRegionHeight() / 2,
 //                    arm.getRegionWidth(), arm.getRegionHeight(), 1.0f, 1.0f, arm_angle);
 //            batch.draw(tr, x, y, width / 2, height / 2, width, height, 1.0f, 1.0f, angle);

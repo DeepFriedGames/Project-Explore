@@ -6,19 +6,19 @@ import com.badlogic.gdx.math.Rectangle;
 import com.shdwfghtr.screens.GameScreen;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 
 public class Sector {
 	public static final int WIDTH = 17, HEIGHT = 14;
-	static final int pHEIGHT = HEIGHT * Tile.HEIGHT;
-	static final int pWIDTH = WIDTH * Tile.WIDTH;
+	public static final int pHEIGHT = HEIGHT * Tile.HEIGHT;
+	public static final int pWIDTH = WIDTH * Tile.WIDTH;
+	private static final Rectangle RECTANGLE = new Rectangle();
 
-    private final float x, y; //global position of the sector's bottom left corner
 	private final char[][] charMap = new char[HEIGHT][WIDTH];
-//    private final Tile[][] tileMap = new Tile[HEIGHT][WIDTH];
-	public String name;
-	private boolean explored;
-	boolean UP, DOWN, RIGHT;
-	public boolean LEFT;
+	public final float x, y; //global position of the sector's bottom left corner
+	public final String name;
+	public boolean explored;
+	public boolean UP, DOWN, LEFT, RIGHT;
 
     Sector(String name, float x, float y, boolean flipX, boolean flipY) {
 		this.x = x;
@@ -37,36 +37,13 @@ public class Sector {
 	}
 
 	char getChar(float x, float y) {
-		int xi = (int) Math.floor((x - getX()) / Tile.WIDTH);
-		int yi = (int) Math.floor((y - getY()) / Tile.HEIGHT);
+		int xi = (int) Math.floor((x - this.x) / Tile.WIDTH);
+		int yi = (int) Math.floor((y - this.y) / Tile.HEIGHT);
     	return getChar(xi, yi);
 	}
 
-	public boolean isExplored() {
-		return explored;
-	}
-
-	public void setExplored(boolean bool) {
-        if(bool)
-            ((GameScreen) ((GdxGame) Gdx.app.getApplicationListener()).getScreen()).setMapImage(name, getXi(), getYi());
-        this.explored = bool;
-        Asset.DATA.putBoolean(getSaveString(), bool);
-        Asset.DATA.flush();
-	}
-    
-    public String getSaveString() {
-        return name + ',' + getXi() + ',' + getYi();
-    }
-
 	public Rectangle getBox() {
-		return Asset.RECTANGLE.set(x, y, pWIDTH, pHEIGHT);
-	}
-
-	public float getX() {
-		return x;
-	}
-	public float getY() {
-		return y;
+		return RECTANGLE.set(x, y, pWIDTH, pHEIGHT);
 	}
 
 	public float getTop() {
@@ -82,12 +59,21 @@ public class Sector {
     }
 
 	void addTiles(String name, boolean flipX, boolean flipY) {
-		try {
 			FileHandle handle = Gdx.files.internal("map/" + name + ".txt");
+			if(!handle.exists()){
+				System.out.println("File not found: " + handle.name()
+						+ "\n using dead0.txt");
+				handle = Gdx.files.internal("map/dead0.txt");
+			}
 			BufferedReader reader = handle.reader(1024);
 
 			for(int y = HEIGHT - 1; y >= 0; y --) {
-				String line = reader.readLine();
+				String line = "";
+				try {
+					line = reader.readLine();
+				} catch(IOException e){
+					e.printStackTrace();
+				}
 				for(int x = 0; x < WIDTH; x ++) {
 					int tx = x, ty = y;
 					if (flipX) tx = WIDTH - 1 - x;
@@ -104,10 +90,6 @@ public class Sector {
 					else charMap[ty][tx] = c;
 				}
 			}
-		} catch (Exception e) {
-    		System.out.println("error adding tiles for " + name);
-    		e.printStackTrace();
-		}
 	}
 
 	void setOpenness() {
@@ -123,12 +105,10 @@ public class Sector {
 	}
 
     public int getXi() {
-        return (int) Math.floor(getX() / pWIDTH);
+        return (int) Math.floor(this.x / pWIDTH);
     }
-    
+
 	public int getYi() {
-		return (int) Math.floor(getY() / pHEIGHT);
+		return (int) Math.floor(this.y / pHEIGHT);
 	}
-    
-    public String getName() {return name;}
 }

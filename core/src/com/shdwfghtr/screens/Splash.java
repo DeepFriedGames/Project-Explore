@@ -3,9 +3,14 @@ package com.shdwfghtr.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.AudioService;
+import com.shdwfghtr.asset.DataService;
+import com.shdwfghtr.asset.InventoryService;
+import com.shdwfghtr.asset.TextureAtlasService;
+import com.shdwfghtr.asset.UserInterfaceService;
+import com.shdwfghtr.entity.Player;
 import com.shdwfghtr.explore.GdxGame;
 
 public class Splash implements Screen{
@@ -15,34 +20,37 @@ public class Splash implements Screen{
 	
 	@Override
 	public void render(float delta) {
-		if(Asset.getManager().update()) {
-			((GdxGame) Gdx.app.getApplicationListener()).asset.initializeResources();
-			Asset.initialize();
+		if(GdxGame.assetService.update()) {
+			GdxGame.textureAtlasService = new TextureAtlasService(GdxGame.assetService);
+			GdxGame.uiService = new UserInterfaceService(GdxGame.assetService);
+			GdxGame.audioService = new AudioService(GdxGame.assetService);
+			DataService.load(Player.CURRENT);
+			InventoryService.initialize();
             numDots++;
 
 			//Changes the screen to be the main menu
             ((GdxGame) Gdx.app.getApplicationListener()).setScreen(new TravelScreen());
 		}
 
-		Asset.GLYPH.setText(font, "Loading");
-		numDots = Math.round(Asset.getManager().getProgress() * 3);
+		GlyphLayout glyphLayout = new GlyphLayout();
+		glyphLayout.setText(font, "Loading");
+		numDots = Math.round(GdxGame.assetService.getProgress() * 3);
 		batch.begin();
-		font.draw(batch, "Loading", 10, Asset.GLYPH.height + 10);
+		font.draw(batch, "Loading", 10, glyphLayout.height + 10);
 		for(int i=0; i<numDots; i++)
-			font.draw(batch, ".", (Asset.GLYPH.width + 4) + i*10, Asset.GLYPH.height + 10);
+			font.draw(batch, ".", (glyphLayout.width + 4) + i*10, glyphLayout.height + 10);
 		batch.end();
 	}
 
 	@Override
-	public void resize(int width, int height) {	
-		if(Asset.getStage() != null)
-			Asset.getStage().getViewport().update(width, height);
+	public void resize(int width, int height) {
+
 	}
 
 	@Override
 	public void show() {
-		Gdx.input.setCatchMenuKey(true);
-		Gdx.input.setCatchBackKey(true);
+		Gdx.input.setCatchKey(82, true); //82 is MENU keycode
+		Gdx.input.setCatchKey(4, true); //4 is BACK keycode
 	}
 
 	@Override

@@ -8,7 +8,12 @@ import com.badlogic.gdx.scenes.scene2d.ui.Slider;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.ConversionService;
+import com.shdwfghtr.asset.DataService;
+import com.shdwfghtr.asset.InventoryService;
+import com.shdwfghtr.asset.OptionsService;
+import com.shdwfghtr.explore.GameCamera;
+import com.shdwfghtr.explore.GdxGame;
 
 public class OptionsMenu extends Menu {
 
@@ -21,54 +26,51 @@ public class OptionsMenu extends Menu {
 		super.show();
 
         //creates a checkbox to turn particle effects on and off
-        CheckBox checkParticles = new CheckBox(" Particles", Asset.getSkin());
-        checkParticles.setChecked(Asset.CONTROLS.getBoolean("particles"));
+        CheckBox checkParticles = new CheckBox(" Particles", GdxGame.uiService.getSkin());
+        checkParticles.setChecked(OptionsService.AreParticlesEnabled());
         checkParticles.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                Asset.CONTROLS.putBoolean("particles", !Asset.CONTROLS.getBoolean("particles"));
-                Asset.CONTROLS.flush();
+                OptionsService.toggleParticlesEnabled();
             }
         });
 
         //creates a checkbox to turn fullscreen on and off
-        final CheckBox checkFullscreen = new CheckBox(" Fullscreen", Asset.getSkin());
-        checkFullscreen.setChecked(Asset.CONTROLS.getBoolean("fullscreen", false));
+        final CheckBox checkFullscreen = new CheckBox(" Fullscreen", GdxGame.uiService.getSkin());
+        checkFullscreen.setChecked(OptionsService.IsFullScreen());
         checkFullscreen.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 if(checkFullscreen.isChecked())
                     Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
                 else
-                    Gdx.graphics.setWindowedMode(Asset.CAM_WIDTH * 3, Asset.CAM_HEIGHT * 3);
+                    Gdx.graphics.setWindowedMode(GameCamera.WIDTH * 3, GameCamera.HEIGHT * 3);
 
-                Asset.CONTROLS.putBoolean("fullscreen", !Asset.CONTROLS.getBoolean("fullscreen"));
-                Asset.CONTROLS.flush();
+                OptionsService.toggleFullscreen();
             }
         });
 
         //creates a slider for volume control
-        Slider sliderVolume = new Slider(0, 1.0f, 0.01f, false, Asset.getSkin()) {
+        Slider sliderVolume = new Slider(0, 1.0f, 0.01f, false, GdxGame.uiService.getSkin()) {
             @Override
             public void act(float delta) {
                 if(isDragging())
-                    Asset.getMusicHandler().setMaxVolume(getValue());
+                    GdxGame.audioService.setMaxVolume(getValue());
                 super.act(delta);
             }
         };
-        sliderVolume.setValue(Asset.getMusicHandler().getMaxVolume());
+        sliderVolume.setValue(GdxGame.audioService.getMaxVolume());
         
         //creates an input box to type a seed
         final TextField fieldSeed = new TextField(
-                Asset.DATA.contains("seed") ? Asset.Convert.toString(Asset.DATA.getLong("seed")) : "",
-                Asset.getSkin());
+                ConversionService.toString(DataService.getSeed()),
+                GdxGame.uiService.getSkin());
         fieldSeed.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
                 try {
+                    DataService.setSeed(ConversionService.toLong(fieldSeed.getText()));
                     System.out.println("new seed is " + fieldSeed.getText());
-                    Asset.DATA.putLong("seed", Asset.Convert.toLong(fieldSeed.getText()));
-                    Asset.DATA.flush();
                 } catch (Exception e) {
                     System.out.println("seed must be digits only");
                     e.printStackTrace();
@@ -79,7 +81,7 @@ public class OptionsMenu extends Menu {
 
         //creates buttons for going back to the travel screen, to the controls screen, and to reset the player
         TextButton buttonControls, buttonReset, buttonExit;
-        buttonControls = new TextButton("Controls", Asset.getSkin());
+        buttonControls = new TextButton("Controls", GdxGame.uiService.getSkin());
         buttonControls.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
@@ -87,16 +89,17 @@ public class OptionsMenu extends Menu {
 
             }
         });
-        buttonReset = new TextButton("New Player", Asset.getSkin());
+        buttonReset = new TextButton("New Player", GdxGame.uiService.getSkin());
         buttonReset.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                Asset.resetData();
+                DataService.reset();
+                InventoryService.reset();
                 backButtonPressed = true;
 
             }
         });
-        buttonExit = new TextButton("Exit Game", Asset.getSkin());
+        buttonExit = new TextButton("Exit Game", GdxGame.uiService.getSkin());
         buttonExit.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {

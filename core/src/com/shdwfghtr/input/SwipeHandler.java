@@ -3,10 +3,13 @@ package com.shdwfghtr.input;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.shdwfghtr.explore.Asset;
+import com.shdwfghtr.asset.ControllerService;
+import com.shdwfghtr.asset.InventoryService;
+
 import com.shdwfghtr.explore.GameState;
 
 public class SwipeHandler extends InputHandler{
+    private static final Vector2 VECTOR2 = new Vector2();
     private final Vector2[] touch = {new Vector2(), new Vector2()};
     private final GestureType[] type = {GestureType.NONE, GestureType.NONE};
 
@@ -18,50 +21,50 @@ public class SwipeHandler extends InputHandler{
                     case NONE:
                         continue;
                     case MOVEMENT:
-                        Asset.VECTOR2.set(Gdx.input.getX(pointer), Gdx.input.getY(pointer));
+                        VECTOR2.set(Gdx.input.getX(pointer), Gdx.input.getY(pointer));
                         //there are x and y gestures, to determine which this is we
                         //compare which has a larger change in value
-                        if (Math.abs(Asset.VECTOR2.x - touch[pointer].x) > Math.abs(Asset.VECTOR2.y - touch[pointer].y))
-                            if (Asset.VECTOR2.x < touch[pointer].x) {
+                        if (Math.abs(VECTOR2.x - touch[pointer].x) > Math.abs(VECTOR2.y - touch[pointer].y))
+                            if (VECTOR2.x < touch[pointer].x) {
                                 getPlayer().left = true;
                                 getPlayer().DOWN = false;
                                 if (Math.abs(getPlayer().d.x) < getPlayer().speed)
                                     getPlayer().d.x = -getPlayer().speed;
                                 else if (getPlayer().RUN) getPlayer().d.x -= 0.05f;
-                            } else if (Asset.VECTOR2.x > touch[pointer].x) {
+                            } else if (VECTOR2.x > touch[pointer].x) {
                                 getPlayer().left = false;
                                 getPlayer().DOWN = false;
                                 if (Math.abs(getPlayer().d.x) < getPlayer().speed)
                                     getPlayer().d.x = getPlayer().speed;
                                 else if (getPlayer().RUN) getPlayer().d.x += 0.05f;
-                            } else if (Asset.VECTOR2.y < touch[pointer].y) {
-                                super.inputDown(new InputEvent(), Asset.CONTROLS.getInteger("down"));
-                            } else if (Asset.VECTOR2.y > touch[pointer].y) {
-                                super.inputDown(new InputEvent(), Asset.CONTROLS.getInteger("up"));
+                            } else if (VECTOR2.y < touch[pointer].y) {
+                                super.inputDown(new InputEvent(), ControllerService.getInput("down"));
+                            } else if (VECTOR2.y > touch[pointer].y) {
+                                super.inputDown(new InputEvent(), ControllerService.getInput("up"));
                             }
                         break;
                     case ACTION:
-                        Asset.VECTOR2.set(Gdx.input.getX(pointer), Gdx.input.getY(pointer));
+                        VECTOR2.set(Gdx.input.getX(pointer), Gdx.input.getY(pointer));
                         //shoot gesture is not moving touch, allowing for some error
-                        if (Asset.VECTOR2.dst2(touch[pointer]) < 1)
+                        if (VECTOR2.dst2(touch[pointer]) < 1)
                             if (getPlayer().charge >= 3)
                                 getPlayer().charge = 3;
-                            else if ((getPlayer().MISSILE && getPlayer().itemActive("charge_missile"))
-                                    || (getPlayer().MORPH && getPlayer().itemActive("charge_bomb"))
-                                    || (!getPlayer().MORPH && !getPlayer().MISSILE && getPlayer().itemActive("charge_shot")))
+                            else if ((getPlayer().MISSILE && InventoryService.isActive("charge_missile"))
+                                    || (getPlayer().MORPH && InventoryService.isActive("charge_bomb"))
+                                    || (!getPlayer().MORPH && !getPlayer().MISSILE && InventoryService.isActive("charge_shot")))
                                 getPlayer().charge *= 1.01f;
                             else
-                                super.inputDown(new InputEvent(), Asset.CONTROLS.getInteger("shoot"));
+                                super.inputDown(new InputEvent(), ControllerService.getInput("shoot"));
 
                             //there are x and y gestures, to determine which this is we
                             //compare which has a larger change in value
-                        else if (Math.abs(Asset.VECTOR2.x - touch[pointer].x) > Math.abs(Asset.VECTOR2.y - touch[pointer].y))
+                        else if (Math.abs(VECTOR2.x - touch[pointer].x) > Math.abs(VECTOR2.y - touch[pointer].y))
                             //swapping weapons is swiping left/right
-                            super.inputDown(new InputEvent(), Asset.CONTROLS.getInteger("switch"));
+                            super.inputDown(new InputEvent(), ControllerService.getInput("switch"));
 
                             //jump gesture is swiping up
-                        else if (Asset.VECTOR2.y > touch[pointer].y)
-                            super.inputDown(new InputEvent(), Asset.CONTROLS.getInteger("jump"));
+                        else if (VECTOR2.y > touch[pointer].y)
+                            super.inputDown(new InputEvent(), ControllerService.getInput("jump"));
                         //running is swiping down
                         break;
                 }
