@@ -1,0 +1,62 @@
+
+particle.png
+size: 32,16
+format: RGBA4444
+filter: Nearest,Nearest
+repeat: none
+bubble
+  rotate: false
+  xy: 1, 8
+  size: 6, 6
+  orig: 6, 6
+  offset: 0, 0
+  index: -1
+flame
+  rotate: false
+  xy: 8, 1
+  size: 4, 6
+  orig: 4, 6
+  offset: 0, 0
+  index: -1
+float
+  rotate: false
+  xy: 27, 13
+  size: 4, 1
+  orig: 4, 1
+  offset: 0, 0
+  index: -1
+gnat
+  rotate: false
+  xy: 15, 11
+  size: 3, 3
+  orig: 3, 3
+  offset: 0, 0
+  index: -1
+particle
+  rotate: false
+  xy: 23, 11
+  size: 3, 3
+  orig: 3, 3
+  offset: 0, 0
+  index: -1
+pre_particle
+  rotate: false
+  xy: 19, 11
+  size: 3, 3
+  orig: 3, 3
+  offset: 0, 0
+  index: -1
+slick
+  rotate: false
+  xy: 1, 1
+  size: 6, 6
+  orig: 6, 6
+  offset: 0, 0
+  index: -1
+spark
+  rotate: false
+  xy: 8, 8
+  size: 6, 6
+  orig: 6, 6
+  offset: 0, 0
+  index: -1
