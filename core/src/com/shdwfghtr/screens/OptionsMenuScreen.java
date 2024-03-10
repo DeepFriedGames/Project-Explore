@@ -5,6 +5,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.CheckBox;
 import com.badlogic.gdx.scenes.scene2d.ui.Slider;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
@@ -15,11 +16,7 @@ import com.shdwfghtr.asset.OptionsService;
 import com.shdwfghtr.explore.GameCamera;
 import com.shdwfghtr.explore.GdxGame;
 
-public class OptionsMenu extends Menu {
-
-    OptionsMenu() {
-        super("Options");
-    }
+public class OptionsMenuScreen extends MenuScreen {
 
     @Override
 	public void show() {
@@ -85,7 +82,7 @@ public class OptionsMenu extends Menu {
         buttonControls.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                goToScreen(new ControlsMenu());
+                goToScreen(new ControlsMenuScreen());
 
             }
         });
@@ -95,8 +92,7 @@ public class OptionsMenu extends Menu {
             public void changed(ChangeEvent event, Actor actor) {
                 DataService.reset();
                 InventoryService.reset();
-                backButtonPressed = true;
-
+                goToPreviousScreen();
             }
         });
         buttonExit = new TextButton("Exit Game", GdxGame.uiService.getSkin());
@@ -107,6 +103,8 @@ public class OptionsMenu extends Menu {
 
             }
         });
+        Table table = new Table();
+        table.setBounds(0, 0, getStage().getWidth(), getStage().getHeight());
         table.add("Seed: ").right().pad(10);
         table.add(fieldSeed).pad(10).row();
         table.add("Volume: ").right().pad(10);
@@ -117,6 +115,7 @@ public class OptionsMenu extends Menu {
         table.add(buttonControls).fill().pad(10).colspan(2).left().row();
         table.add(buttonReset).fill().pad(10).colspan(2).left().row();
         table.add(buttonExit).fill().pad(10).padTop(40).colspan(2).left();
+        addActor(table);
     }
 	
 	@Override

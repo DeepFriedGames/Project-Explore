@@ -4,7 +4,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
@@ -14,10 +13,10 @@ import com.badlogic.gdx.utils.Pool;
 import com.shdwfghtr.asset.InventoryService;
 import com.shdwfghtr.asset.PaletteService;
 import com.shdwfghtr.asset.TimeService;
-import com.shdwfghtr.entity.*;
-import com.shdwfghtr.screens.GameScreen;
-
-import org.graalvm.compiler.lir.LIRInstruction;
+import com.shdwfghtr.entity.Entity;
+import com.shdwfghtr.entity.Player;
+import com.shdwfghtr.entity.Slick;
+import com.shdwfghtr.entity.Spawner;
 
 import java.util.HashMap;
 
@@ -198,16 +197,10 @@ public class World {
         if(activate) {
             inactiveEntities.removeValue(e, true);
             if(!activeEntities.contains(e, true))
-                switch (e.drawLayer) {
-                    case BACKGROUND:
-                        activeEntities.insert(0, e);
-                        break;
-                    case FOREGROUND:
-                        activeEntities.add(e);
-                        break;
-                    default:
-                        activeEntities.insert(0, e);
-                        break;
+                if (e.drawLayer == Entity.DrawLayer.FOREGROUND) {
+                    activeEntities.add(e);
+                } else {
+                    activeEntities.insert(0, e);
                 }
         } else if(!e.persistent) {
             activeEntities.removeValue(e, true);
@@ -387,7 +380,7 @@ public class World {
             final Array<Entity> deactivate = new Array<>();
             final Array<Entity> dead = new Array<>();
 
-            final Rectangle cameraBox = GdxGame.getCamera().getBox();;
+            final Rectangle cameraBox = GdxGame.getCamera().getBox();
 
             for(Entity inactive : inactiveArray)
                 if(cameraBox.overlaps(inactive.getBox())

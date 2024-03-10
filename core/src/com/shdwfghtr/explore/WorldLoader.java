@@ -23,6 +23,7 @@ import com.shdwfghtr.entity.Spawner;
 import com.shdwfghtr.entity.Switch;
 import com.shdwfghtr.entity.Turret;
 import com.shdwfghtr.entity.WaspNest;
+import com.shdwfghtr.screens.GameScreen;
 
 import java.util.ArrayList;
 import java.util.Arrays;

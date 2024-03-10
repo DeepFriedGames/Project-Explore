@@ -9,7 +9,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 
 public class Sector {
-	public static final int WIDTH = 17, HEIGHT = 14;
+	public static final int WIDTH = 20, HEIGHT = 18;
 	public static final int pHEIGHT = HEIGHT * Tile.HEIGHT;
 	public static final int pWIDTH = WIDTH * Tile.WIDTH;
 	private static final Rectangle RECTANGLE = new Rectangle();

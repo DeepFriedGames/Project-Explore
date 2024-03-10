@@ -1,45 +1,35 @@
 package com.shdwfghtr.ui;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
-import com.shdwfghtr.asset.ControllerService;
 import com.shdwfghtr.asset.ConversionService;
 import com.shdwfghtr.asset.DataService;
 import com.shdwfghtr.asset.InventoryService;
 import com.shdwfghtr.asset.PaletteService;
 import com.shdwfghtr.entity.Player;
-import com.shdwfghtr.explore.GameState;
 import com.shdwfghtr.explore.GdxGame;
-import com.shdwfghtr.explore.World;
-import com.shdwfghtr.explore.WorldLoader;
 
 public class PauseMenuTable extends Table {
-    private static final TextureRegion playerTextureRegion = GdxGame.textureAtlasService.findEntityRegion("player_stand_front");
+    private final TextureRegion playerTextureRegion = GdxGame.textureAtlasService.findEntityRegion("player_stand_front");
+    private final TextureRegion backgroundTextureRegion = GdxGame.textureAtlasService.findUIRegion("pauseMenu");
     final float menuBorder =  15f;
     final float menuBreak = getWidth() /4f;
     public final Array<Actor> items = new Array<>();
 
     public PauseMenuTable(Player player) {
-        setBackground(new TextureRegionDrawable(GdxGame.textureAtlasService.findUIRegion("pauseMenu")));
-        setBounds(0, 0, GdxGame.uiService.getStage().getWidth()
-                , GdxGame.uiService.getStage().getHeight() - HUDTable.HEIGHT - 1);
+        setBackground(new TextureRegionDrawable(backgroundTextureRegion));
         setName("Pause Menu");
-
 
         PlayerImage playerImage = this.new PlayerImage();
         addActor(playerImage);
@@ -58,22 +48,21 @@ public class PauseMenuTable extends Table {
 
         items.addAll(InventoryService.getInventoryActors());
         for(Actor item : items){
-            item.setSize(getWidth() / 4
-                    , GdxGame.uiService.getBodyFont().getLineHeight());
+            item.setSize(getWidth() / 4, GdxGame.uiService.getBodyFont().getLineHeight());
             item.setTouchable(Touchable.enabled);
         }
     }
 
-    public PauseMenuTable(Player player, WorldLoader... loaders){
+    public PauseMenuTable(Player player, WorldUIGroup... worldUIGroups){
         this(player);
         //setBounds(BUTTON_SIZE, BUTTON_SIZE, GdxGame.uiService.getStage().getWidth() - 2*BUTTON_SIZE, GdxGame.uiService.getStage().getHeight() - 2*BUTTON_SIZE);
         setLayoutEnabled(false);
         setTouchable(Touchable.disabled);
-        addActor(this.new SystemInfoGroup(loaders));
+        addActor(this.new SystemInfoGroup(worldUIGroups));
     }
-    public PauseMenuTable(Player player, World world) {
+    public PauseMenuTable(Player player, WorldUIGroup worldUIGroup) {
         this(player);
-        addActor(this.new WorldInfoGroup(world));
+        addActor(worldUIGroup.new WorldInformationLabel());
     }
 
    private class PlayerImage extends Image {
@@ -87,7 +76,15 @@ public class PauseMenuTable extends Table {
        }
    }
 
-   private class PlayerStatisticsActor extends Actor {
+    @Override
+    protected void setStage(Stage stage) {
+        super.setStage(stage);
+
+        if(stage != null)
+            setBounds(0, 0,stage.getWidth(), stage.getHeight() - HUDTable.HEIGHT - 1);
+    }
+
+    private class PlayerStatisticsActor extends Actor {
         private final Player player;
        private PlayerStatisticsActor(Player player) {
            this.player = player;
@@ -127,34 +124,10 @@ public class PauseMenuTable extends Table {
        }
    }
 
-   private class WorldInfoGroup extends Group {
-       private final World world;
-       private final String header;
-
-       WorldInfoGroup(World world) {
-            this.world = world;
-           this.header = "Planet " + world.getName();
-           Label menuHeader = new Label(header, GdxGame.uiService.getSkin(), "title"
-                   , PaletteService.getPalette("ui")[1]);
-           menuHeader.setPosition(menuBreak + menuBorder * 2
-                   , getHeight() - menuHeader.getHeight() - menuBorder);
-           addActor(menuHeader);
-
-           Label.LabelStyle style = new Label.LabelStyle(GdxGame.uiService.getBodyFont(), Color.WHITE);
-           Label label = new Label("  Type: " + World.getType(world.index).toUpperCase() + '\n' +
-                   "  Gravity: " + Math.round(world.gravity * 100) + "%\n" +
-                   "  Atmosphere: " + Math.round(world.atmosphere * 100) + '%', style);
-           label.setPosition(menuHeader.getX()
-                   , menuHeader.getY() - GdxGame.uiService.getBodyFont().getLineHeight() * 4);
-           addActor(label);
-        }
-   }
-
    private class SystemInfoGroup extends Group {
-        private final String header;
-        private SystemInfoGroup(WorldLoader... loaders) {
+       private SystemInfoGroup(WorldUIGroup... worldUIGroups) {
             GlyphLayout glyphLayout = new GlyphLayout();
-            this.header = "System " + ConversionService.toString(Math.abs(DataService.getSeed()));
+           String header = "System " + ConversionService.toString(Math.abs(DataService.getSeed()));
             Label menuHeader = new Label(header, GdxGame.uiService.getSkin(), "title", PaletteService.getPalette("ui")[1]);
             glyphLayout.setText(GdxGame.uiService.getBodyFont(), header);
             menuHeader.setSize(glyphLayout.width, glyphLayout.height);
@@ -162,33 +135,15 @@ public class PauseMenuTable extends Table {
             menuHeader.setTouchable(Touchable.disabled);
             addActor(menuHeader);
 
-            Label.LabelStyle style = new Label.LabelStyle(GdxGame.uiService.getBodyFont(), Color.WHITE);
-            for(int i = 0; i< loaders.length; i++) {
-                WorldLoader loader = loaders[i];
-                int lines = 5;
-                float labelHeight = GdxGame.uiService.getBodyFont().getLineHeight() * lines;
-                final String name = "Planet " + loader.world.getName();
-                Label label = new Label(name + '\n' +
-                        "  Type: " + World.getType(loader.world.index).replace("planet_", "").toUpperCase() + '\n' +
-                        "  Gravity: " + Math.round(loader.world.gravity * 100) + "%\n" +
-                        "  Atmosphere: " + Math.round(loader.world.atmosphere * 100) + '%', style);
+            for(int i = 0; i< worldUIGroups.length; i++) {
+                Label label = worldUIGroups[i].new WorldInformationLabel();
                 float x = menuHeader.getX(),
-                        y = menuHeader.getY() - labelHeight * (i + 1);
+                        y = menuHeader.getY() - label.getHeight() * (i + 1);
                 if(y <= 0) {
                     x += menuBreak + 2 * menuBorder;
-                    y += labelHeight * 5;
+                    y += label.getHeight() * 5;
                 }
-                label.addListener(new ClickListener(){
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        super.clicked(event, x, y);
-                        ((ImageButton) GdxGame.uiService.getStage().getRoot().findActor("Stats Button")).toggle();
-                        Image planet = GdxGame.uiService.getStage().getRoot().findActor(name);
-                        Gdx.input.setCursorPosition(Math.round(planet.getX() + planet.getWidth()/2),
-                                Math.round(GdxGame.uiService.getStage().getHeight() - (planet.getY() + planet.getHeight()/2)));
-                    }
-
-                });
+                label.addListener(worldUIGroups[i].new WorldClickListener());
                 label.setPosition(x, y);
                 addActor(label);
             }

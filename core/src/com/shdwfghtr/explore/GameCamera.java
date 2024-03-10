@@ -27,7 +27,6 @@ public class GameCamera extends OrthographicCamera {
 	public void update() {
 		super.update();
 		if(Player.CURRENT != null) {
-
 			//determine the target camera position as a weighted average of points of interest
 			float maxDx = (viewportWidth - 2 * padding) * zoom,
 					maxDy = (viewportHeight - 2 * padding) * zoom;

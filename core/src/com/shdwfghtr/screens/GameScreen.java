@@ -2,9 +2,7 @@ package com.shdwfghtr.screens;
 
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -12,18 +10,11 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Array;
 import com.shdwfghtr.asset.ControllerService;
 import com.shdwfghtr.asset.DataService;
 import com.shdwfghtr.asset.InventoryService;
-import com.shdwfghtr.asset.OptionsService;
-import com.shdwfghtr.asset.PaletteService;
 import com.shdwfghtr.asset.TimeService;
-import com.shdwfghtr.asset.UserInterfaceService;
 import com.shdwfghtr.entity.Entity;
 import com.shdwfghtr.entity.Player;
 import com.shdwfghtr.explore.GameCamera;
@@ -35,6 +26,7 @@ import com.shdwfghtr.explore.World;
 import com.shdwfghtr.input.InputHandler;
 import com.shdwfghtr.ui.HUDTable;
 import com.shdwfghtr.ui.PauseMenuTable;
+import com.shdwfghtr.ui.WorldUIGroup;
 
 public class GameScreen implements Screen {
     private static final Vector2 VECTOR2 = new Vector2();
@@ -47,10 +39,10 @@ public class GameScreen implements Screen {
     public final World world;
     public final GameCamera camera;
 
-    GameScreen(World world) { 
-        this.world = world;
+    public GameScreen(WorldUIGroup worldUiGroup) {
+        this.world = worldUiGroup.worldLoader.world;
         this.camera = new GameCamera();
-        this.menu = new PauseMenuTable(Player.CURRENT, world);
+        this.menu = new PauseMenuTable(Player.CURRENT, worldUiGroup);
     }
 
     @Override
@@ -94,7 +86,6 @@ public class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         if(getState() == GameState.CUTSCENE) {
-
             camera.update();
             world.update(delta);
 
@@ -122,12 +113,10 @@ public class GameScreen implements Screen {
 
             camera.update();
             world.update(delta);
-            if(OptionsService.AreParticlesEnabled()) GdxGame.particleService.update(delta);
 
             batch.setProjectionMatrix(camera.combined);
             batch.begin();
             world.draw(batch);
-            if(OptionsService.AreParticlesEnabled()) GdxGame.particleService.draw(batch);
             batch.end();
 
 //			debugRender();
@@ -139,10 +128,7 @@ public class GameScreen implements Screen {
             DataService.setSectorExplored(playerSector, true);
         }
 
-        GdxGame.uiService.getStage().act(delta);
         input.act(delta);
-        GdxGame.uiService.getStage().draw();
-        GdxGame.uiService.getStage().getBatch().setColor(Color.WHITE);
     }
 
     @SuppressWarnings("unused")

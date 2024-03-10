@@ -2,16 +2,14 @@ package com.shdwfghtr.asset;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
-import com.badlogic.gdx.graphics.g2d.ParticleEmitter;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
-
+import com.shdwfghtr.explore.GdxGame;
 
 import java.util.HashMap;
 
@@ -19,6 +17,7 @@ public class ParticleService implements Disposable {
     private final HashMap<String, ParticleEffectPool> POOLS = new HashMap<>();
     private final Array<ParticleEffectPool.PooledEffect> ADDITIVE_EFFECTS = new Array<>();
     private final Array<ParticleEffectPool.PooledEffect> NORMAL_EFFECTS = new Array<>();
+    private final SpriteBatch spriteBatch = new SpriteBatch();
     final TextureAtlas atlas = new TextureAtlas("atlas/particle.atlas");
 
     public ParticleService() {
@@ -85,18 +84,20 @@ public class ParticleService implements Disposable {
         }
     }
 
-    public void draw(Batch batch) {
+    public void draw() {
         //draw all additive blended effects
+        spriteBatch.begin();
         ParticleEffectPool.PooledEffect[] additives = ADDITIVE_EFFECTS.toArray(ParticleEffectPool.PooledEffect.class);
         for (ParticleEffectPool.PooledEffect additiveEffect : additives)
-            additiveEffect.draw(batch);
+            additiveEffect.draw(spriteBatch);
 
         //We need to reset the batch to the original blend state as we have setEmittersCleanUpBlendFunction as false in additiveEffect
-        batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        spriteBatch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         //draw all 'normal alpha' blended effects
         ParticleEffectPool.PooledEffect[] normies = NORMAL_EFFECTS.toArray(ParticleEffectPool.PooledEffect.class);
         for (ParticleEffectPool.PooledEffect normalEffect : normies)
-            normalEffect.draw(batch);
+            normalEffect.draw(spriteBatch);
+        spriteBatch.end();
     }
 
     public ParticleEffectPool.PooledEffect[] getEffects() {

@@ -1,43 +1,37 @@
 package com.shdwfghtr.asset;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
+import com.badlogic.gdx.utils.viewport.ScreenViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 import com.kotcrab.vis.ui.VisUI;
-import com.shdwfghtr.entity.Player;
-import com.shdwfghtr.explore.GdxGame;
-import com.shdwfghtr.explore.World;
-import com.shdwfghtr.ui.HUDTable;
 import com.shdwfghtr.ui.MessageTable;
 
 public class UserInterfaceService implements Disposable {
+    private final Viewport viewport;
     private final Stage stage;
+    private final Skin uiSkin;
     private final CursorData cursor = new CursorData();
     private final Image uiCurtain = new Image(new Texture(1, 1, Pixmap.Format.RGB565));
     private final MessageTable messageTable;
 
-    private Skin uiSkin;
-
-    public UserInterfaceService(AssetManagerService manager){
-        this.stage = new Stage();
+    public UserInterfaceService() {
+        this.viewport = new ScreenViewport();
+        this.stage = new Stage(this.viewport);
         Gdx.input.setInputProcessor(stage);
 
         this.uiSkin = new Skin(Gdx.files.internal("skin/neutralizer-ui.json"));
@@ -45,9 +39,12 @@ public class UserInterfaceService implements Disposable {
 
         messageTable = new MessageTable(uiSkin);
         stage.addActor(messageTable);
+        stage.setDebugAll(true); //TODO remove this
     }
 
     public void update(float delta) {
+        stage.act(delta);
+
         //changes the cursor if it is over a touchable interface
         cursor.position.set(Gdx.input.getX(), Gdx.input.getY());
         cursor.position.set(stage.screenToStageCoordinates(cursor.position));
@@ -56,6 +53,12 @@ public class UserInterfaceService implements Disposable {
             cursor.updateCursor("hand");
         else
             cursor.updateCursor("arrow");
+    }
+
+    public void draw() {
+        viewport.apply();
+        stage.draw();
+        stage.getBatch().setColor(Color.WHITE);
     }
 
     public void addMessage(String message) {

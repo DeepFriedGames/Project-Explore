@@ -31,11 +31,11 @@ import com.shdwfghtr.input.TouchHandler;
 
 import java.util.HashMap;
 
-public class ControlsMenu extends Menu {
+public class ControlsMenuScreen extends MenuScreen {
 	private final Table touchTable = new Table(GdxGame.uiService.getSkin()), dPadTable = new Table();
-	private final HashMap<String, TextButton> inputButtons = new HashMap<String, TextButton>();
-	private final Array<Button> touchButtons = new Array<Button>(TouchHandler.BUTTONS);
-	private final Array<Slider> touchSliders = new Array<Slider>(5);
+	private final HashMap<String, TextButton> inputButtons = new HashMap<>();
+	private final Array<Button> touchButtons = new Array<>(TouchHandler.BUTTONS);
+	private final Array<Slider> touchSliders = new Array<>(5);
 	private final Touchpad touchPad = new Touchpad(0, GdxGame.uiService.getSkin());
 	private final Dialog inputDialog = new Dialog("Reset Input", GdxGame.uiService.getSkin());
 	private final Stage stage = GdxGame.uiService.getStage();
@@ -44,10 +44,6 @@ public class ControlsMenu extends Menu {
 	private Cell<Table> touchCell;
 	private Cell<Actor> dPadCell;
 	private ControllerAdapter adapter;
-
-	ControlsMenu() {
-		super("Controls");
-	}
 
 	@Override
 	public void render(float delta) {
@@ -68,7 +64,7 @@ public class ControlsMenu extends Menu {
 				else
 					b.setTouchable(Touchable.enabled);
 				b.setVisible(!b.isDisabled());
-				table.findActor(b.getName() + " label").setVisible(!b.isDisabled());
+				this.findActor(b.getName() + " label").setVisible(!b.isDisabled());
 			}
 		}
 		if(touchSliders.size > 0) {
@@ -106,7 +102,7 @@ public class ControlsMenu extends Menu {
 		//values can be customized by clicking buttons.
 
 		//first the table
-		table.setName("Controls Table");
+		this.setName("Controls");
 		adapter = new ControllerAdapter() {
 			@Override
 			public boolean buttonDown(Controller controller, int button) {
@@ -124,8 +120,8 @@ public class ControlsMenu extends Menu {
 
 		//first a list of possible input devices to choose from
 		Label selectLabel = new Label("Choose Input Device:", GdxGame.uiService.getSkin());
-		final SelectBox<String> selectBox = new SelectBox<String>(GdxGame.uiService.getSkin());
-		Array<String> items = new Array<String>();
+		final SelectBox<String> selectBox = new SelectBox<>(GdxGame.uiService.getSkin());
+		Array<String> items = new Array<>();
 		if(Gdx.input.isPeripheralAvailable(Peripheral.HardwareKeyboard)) items.add(" Keyboard");
 		if(Gdx.input.isPeripheralAvailable(Peripheral.MultitouchScreen)) items.add(" Touch Screen");
 		Controller[] controllers = Controllers.getControllers().toArray(Controller.class);
@@ -192,14 +188,14 @@ public class ControlsMenu extends Menu {
 
 		final Slider paddingSlider = new Slider(0, 32, 1, false, GdxGame.uiService.getSkin());
 		paddingSlider.addListener(new ChangeListener() {
-			final Array<Cell> cells = new Array<Cell>();
+			final Array<Cell> cells = new Array<>();
 			@Override
 			public void changed(ChangeEvent event, Actor actor) {
 				if(cells.size <= 0) {
 					Table buttonTable = touchTable.findActor("Button Table");
 					if (buttonTable != null) cells.addAll(buttonTable.getCells());
 					if (dPadTable != null) cells.addAll(dPadTable.getCells());
-					if (touchTable != null) cells.addAll(touchTable.getCells());
+					cells.addAll(touchTable.getCells());
 				}
 
 				Cell[] array = cells.toArray(Cell.class);
@@ -223,7 +219,7 @@ public class ControlsMenu extends Menu {
 					Table buttonTable = touchTable.findActor("Button Table");
 					if (buttonTable != null) cells.addAll(buttonTable.getCells());
 					if (dPadTable != null) cells.addAll(dPadTable.getCells());
-					if (touchTable != null) cells.addAll(touchTable.getCells());
+					cells.addAll(touchTable.getCells());
 				}
 
 				Cell[] array = cells.toArray(Cell.class);
@@ -238,7 +234,7 @@ public class ControlsMenu extends Menu {
 		sizeSlider.setValue(size);
 		sizeSlider.setName("Size Slider");
 
-		final Slider borderSlider = new Slider(0, Gdx.graphics.getWidth() / 3,
+		final Slider borderSlider = new Slider(0, Gdx.graphics.getWidth() / 3f,
 				1, false, GdxGame.uiService.getSkin());
 		borderSlider.addListener(new ChangeListener() {
 			@Override
@@ -318,7 +314,7 @@ public class ControlsMenu extends Menu {
 
 						inputDialog.clear();
 						inputDialog.text("Press the desired input \nfor " + key.toUpperCase() + " now.");
-						table.addActor(inputDialog);
+						ControlsMenuScreen.this.addActor(inputDialog);
 
 						if(ControllerService.isKeyboard()) {
 							inputDialog.addListener(new InputListener() {
@@ -344,10 +340,11 @@ public class ControlsMenu extends Menu {
 
 		}
 
+		Table table = new Table();
 		table.add(selectionTable).pad(pad);
 		table.add(inputTable).pad(pad).row();
 		touchCell = table.add(touchTable).expand().fillX().bottom().colspan(2);
-		stage.addActor(table);
+		this.addActor(table);
 	}
 
 	private void createDPadTouchTable(float size, float padding, float border, float position) {
@@ -398,7 +395,7 @@ public class ControlsMenu extends Menu {
 	
 	@Override
 	void goToPreviousScreen() {
-		goToScreen(new OptionsMenu());
+		goToScreen(new OptionsMenuScreen());
 	}
 }
 

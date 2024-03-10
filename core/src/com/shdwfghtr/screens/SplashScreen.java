@@ -13,7 +13,7 @@ import com.shdwfghtr.asset.UserInterfaceService;
 import com.shdwfghtr.entity.Player;
 import com.shdwfghtr.explore.GdxGame;
 
-public class Splash implements Screen{
+public class SplashScreen implements Screen{
 	private int numDots;
 	private final BitmapFont font = new BitmapFont(Gdx.files.internal("skin/font-export.fnt"));
 	private final SpriteBatch batch = new SpriteBatch();
@@ -22,7 +22,7 @@ public class Splash implements Screen{
 	public void render(float delta) {
 		if(GdxGame.assetService.update()) {
 			GdxGame.textureAtlasService = new TextureAtlasService(GdxGame.assetService);
-			GdxGame.uiService = new UserInterfaceService(GdxGame.assetService);
+			GdxGame.uiService = new UserInterfaceService();
 			GdxGame.audioService = new AudioService(GdxGame.assetService);
 			DataService.load(Player.CURRENT);
 			InventoryService.initialize();

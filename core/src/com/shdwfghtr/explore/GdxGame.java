@@ -1,25 +1,24 @@
 package com.shdwfghtr.explore;
 
-import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.profiling.GLProfiler;
-import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.MathUtils;
 import com.shdwfghtr.asset.AssetManagerService;
 import com.shdwfghtr.asset.AudioService;
-import com.shdwfghtr.asset.ControllerService;
 import com.shdwfghtr.asset.OptionsService;
-import com.shdwfghtr.asset.PaletteService;
 import com.shdwfghtr.asset.ParticleService;
 import com.shdwfghtr.asset.TextureAtlasService;
 import com.shdwfghtr.asset.TimeService;
 import com.shdwfghtr.asset.UserInterfaceService;
 import com.shdwfghtr.screens.GameScreen;
-import com.shdwfghtr.screens.Splash;
+import com.shdwfghtr.screens.SplashScreen;
 
 @SuppressWarnings("ALL")
 public class GdxGame extends com.badlogic.gdx.Game {
+	public static final int WIDTH = 960;
+	public static final int HEIGHT = 540;
     private static ActionResolver ACTION_RESOLVER;
 	public static AssetManagerService assetService;
 	public static TextureAtlasService textureAtlasService;
@@ -56,40 +55,39 @@ public class GdxGame extends com.badlogic.gdx.Game {
 		if(OptionsService.IsFullScreen())
 			Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
 
-		setScreen(new Splash());
+		setScreen(new SplashScreen());
 		profiler = new GLProfiler(Gdx.graphics);
 		profiler.enable();
 	}
 
 	@Override
 	public void render () {
-//		accumulator += Gdx.graphics.getRawDeltaTime();
-//		if (accumulator >= tickPeriod) {
-		//waits to update frames every 1/60th of a second
-		float delta = Gdx.graphics.getRawDeltaTime();
 		//update the game clock
+		float delta = Gdx.graphics.getRawDeltaTime();
 		TimeService.Update(delta);
-		if(uiService != null) uiService.update(delta);
+
+		if(audioService != null) audioService.update(delta);
 
 		//clear the display with blackness that slowly fades to world Color
 		//why? because it's cool, that's why.
-		float r, g, b;
-		r = (float) Math.sin(Math.toRadians(TimeService.GetTime() * 10)) * fadeColor.r / 10;
-		g = (float) Math.sin(Math.toRadians(TimeService.GetTime() * 10)) * fadeColor.g / 10;
-		b = (float) Math.sin(Math.toRadians(TimeService.GetTime() * 10)) * fadeColor.b / 10;
+		float r = MathUtils.sin(TimeService.GetTime() % MathUtils.PI2) * fadeColor.r / 25f;
+		float g = MathUtils.sin(TimeService.GetTime() % MathUtils.PI2) * fadeColor.g / 25f;
+		float b = MathUtils.sin(TimeService.GetTime() % MathUtils.PI2) * fadeColor.b / 25f;
 		Gdx.gl.glClearColor(r, g, b, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		//draws the current screen to the display
-		getScreen().render(delta); //tickPeriod);
-		if(audioService != null) audioService.update(delta);//tickPeriod);
-//
-//			System.out.println(Gdx.graphics.isContinuousRendering() + ", " + ( 1 / Gdx.graphics.getRawDeltaTime()));
-//			System.out.println("texture bindings: " + GLProfiler.textureBindings);
+		getScreen().render(delta);
+		if(particleService != null && OptionsService.AreParticlesEnabled()) {
+			particleService.update(delta);
+			particleService.draw();
+		}
+		if(uiService != null) {
+			uiService.update(delta);
+			uiService.draw();
+		}
 		profiler.reset();
-//			accumulator -= tickPeriod;
 	}
-//	}
 
 	@Override
 	public void dispose() {
