@@ -23,7 +23,6 @@ import com.shdwfghtr.entity.Spawner;
 import com.shdwfghtr.entity.Switch;
 import com.shdwfghtr.entity.Turret;
 import com.shdwfghtr.entity.WaspNest;
-import com.shdwfghtr.screens.GameScreen;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,7 +66,7 @@ public class WorldLoader implements Runnable {
             return VARIATIONS.get(name);
         else {
             int n = 0;
-            while (Gdx.files.internal("map/" + name + String.valueOf(n) + ".txt").exists())
+            while (Gdx.files.internal("map/" + name + n + ".txt").exists())
                 n++;
 
             VARIATIONS.put(name, n);
@@ -257,8 +256,9 @@ public class WorldLoader implements Runnable {
                 x1 = random.nextInt(width - 2) + 1;
                 for (int m=0; m<n; m++) {
                     int dist = Math.abs(x1 - shafts[m][0]);
-                    if(dist < minSize || dist > maxSize) {
+                    if (dist < minSize || dist > maxSize) {
                         keepTrying = true;
+                        break;
                     }
                 }
                 oflow++;
@@ -304,7 +304,7 @@ public class WorldLoader implements Runnable {
         //Optional item rooms, generic items, and missile/O2/Health upgrades can be added to any world.
         //Optional items include: Long Shot, Speed boots, Charge Missile, Charge Shot, Wide Shot, Charge Bomb, Seeking Missile,
         //Razor Jump.        
-        Array<Character> special = new Array<Character>();
+        Array<Character> special = new Array<>();
         char[] main_items = {'I', 'C', 'B', 'W', 'G', 'J', 'T', 'P'};
         char[] opt_items = {'O', 'M', 'A'};
         char[] other = {'$'};
@@ -541,10 +541,11 @@ public class WorldLoader implements Runnable {
     }
 
     public void createEntities() {
-        LinkedHashMap<Door, Switch> switches = new LinkedHashMap<Door, Switch>();
-        ArrayList<float[]> switchPositions = new ArrayList<float[]>();
-        for(Sector[] array : world.sectorMap)
-            for(final Sector sector : array) {
+        LinkedHashMap<Door, Switch> switches = new LinkedHashMap<>();
+        ArrayList<float[]> switchPositions = new ArrayList<>();
+        for(int yi = 0; yi < world.sectorMap.length; yi++)
+            for(int xi = 0; xi < world.sectorMap[yi].length; xi++) {
+                final Sector sector = world.getSector(xi, yi);
                 for (int y = 0; y < Sector.HEIGHT; y++)
                     for (int x = 0; x < Sector.WIDTH; x++) {
                         float worldX = sector.x + x * Tile.WIDTH,

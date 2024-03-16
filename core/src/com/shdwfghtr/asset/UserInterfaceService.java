@@ -39,7 +39,7 @@ public class UserInterfaceService implements Disposable {
 
         messageTable = new MessageTable(uiSkin);
         stage.addActor(messageTable);
-        stage.setDebugAll(true); //TODO remove this
+        //stage.setDebugAll(true); //TODO remove this
     }
 
     public void update(float delta) {

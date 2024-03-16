@@ -35,7 +35,7 @@ public class Entity extends Sprite {
     public String name = "";
     public boolean persistent = false;
 
-    float stateTime = 0, importance;
+    float stateTime = 0;
 
     Entity() {
 		super();
@@ -136,14 +136,6 @@ public class Entity extends Sprite {
 	public Rectangle getBox() {
         return getBoundingRectangle();
 	}
-
-    public float getImportance() {
-        return importance;
-    }
-
-    public void setImportance(float importance) {
-        this.importance = importance;
-    }
 
 	public boolean isDead() {
 		return delete;

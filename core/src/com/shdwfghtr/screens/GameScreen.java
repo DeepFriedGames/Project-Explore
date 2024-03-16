@@ -1,5 +1,7 @@
 package com.shdwfghtr.screens;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -32,122 +34,110 @@ public class GameScreen implements Screen {
     private static final Vector2 VECTOR2 = new Vector2();
     private final SpriteBatch batch = new SpriteBatch();
     private final Array<Actor> items = new Array<>();
-    private final ShapeRenderer sr = new ShapeRenderer();
+    private final ShapeRenderer shapeRenderer = new ShapeRenderer();
     private final PauseMenuTable menu;
+    private final HUDTable hud;
     private InputHandler input;
     private GameState state;
+
     public final World world;
     public final GameCamera camera;
 
     public GameScreen(WorldUIGroup worldUiGroup) {
         this.world = worldUiGroup.worldLoader.world;
-        this.camera = new GameCamera();
+        int camHeight = Sector.pHEIGHT;
+        int camWidth = Gdx.graphics.getWidth() * camHeight / Gdx.graphics.getHeight();
+        this.camera = new GameCamera(camWidth, camHeight);
         this.menu = new PauseMenuTable(Player.CURRENT, worldUiGroup);
+        this.hud = new HUDTable(Player.CURRENT, menu.worldMap.miniMap, GdxGame.uiService.getSkin());
     }
 
     @Override
     public void show() {
         GdxGame.audioService.setMusic("World" + world.index, true);
         GdxGame.audioService.fadeIn(5);
+
         GdxGame.uiService.getStage().clear();
-        input = ControllerService.GetInputHandler();
-
-        GdxGame.uiService.getStage().addActor(new HUDTable(Player.CURRENT, world, GdxGame.uiService.getSkin()));
-
-        if(ControllerService.isTouch())
-            menu.addListener(new InputListener() {
-                @Override
-                public void	touchUp(InputEvent event, float x, float y, int pointer, int button) {
-                    setState(GameState.PLAY);
-                }
-            });
-
+        GdxGame.uiService.getStage().addActor(hud);
         GdxGame.uiService.fadeOutCurtain(1.0f);
 
+        if(ControllerService.isTouch())
+            menu.addListener(this.new ToggleTouchInputListener());
+
+        input = ControllerService.GetInputHandler();
         input.setGameScreen(this);
         input.setPlayer(Player.CURRENT);
         input.toStage(GdxGame.uiService.getStage());
         camera.position.set(Player.CURRENT.getCenterX(), Player.CURRENT.getY() + Tile.HEIGHT, 0);
         setState(GameState.PLAY);
 
-        GdxGame.uiService.getStage().addListener(new InputListener() {
-            @Override
-            public boolean keyDown(InputEvent event, int keycode) {
-                if(7 <= keycode && keycode <= 16) {
-					float amount = (keycode - 6) * 0.1f;
-                    camera.addTrauma(amount);
-                return true;
-                }
-				return false;
-            }
-        });
+        GdxGame.uiService.getStage().addListener(new DebugTraumaInputListener());
     }
 
     @Override
     public void render(float delta) {
-        if(getState() == GameState.CUTSCENE) {
-            camera.update();
-            world.update(delta);
+        switch(state){
+            case PLAY:
+                //marks the player's current sector as explored
+                Sector playerSector = world.getSector(Player.CURRENT.getBox().getCenter(VECTOR2));
+                if(!playerSector.explored){
+                    playerSector.explored = true;
+                    DataService.setSectorExplored(playerSector, true);
+                }
 
-            batch.setProjectionMatrix(camera.combined);
-            batch.begin();
-            world.draw(batch);
-            batch.end();
+                //Oxygen is running out slowly
+                if(TimeService.GetTime() % (Player.CURRENT.armor / 2f + world.atmosphere + 0.5f) < 0.017f) {
+                    Player.CURRENT.health--;
+                    Player.CURRENT.oxygenEffect = GdxGame.particleService.obtain("oxygen", true);
+                }
 
-            if(Player.CURRENT.d.x < 0) Player.CURRENT.d.x = -Player.CURRENT.speed;
-            Player.CURRENT.getBox().setPosition(Player.CURRENT.getBox().getPosition(VECTOR2).add(Player.CURRENT.d));
-            Player.CURRENT.checkCollisions();
+                camera.update();
+                world.update(delta);
 
-        } else  if(getState() == GameState.PAUSE) {
-            batch.setProjectionMatrix(camera.combined);
-            batch.begin();
-            world.draw(batch);
-            batch.end();
+                batch.setProjectionMatrix(camera.combined);
+                batch.begin();
+                world.draw(batch);
+                batch.end();
+                break;
+            case PAUSE:
+                batch.setProjectionMatrix(camera.combined);
+                batch.begin();
+                world.draw(batch);
+                batch.end();
+                break;
+            case CUTSCENE:
+                camera.update();
+                world.update(delta);
 
-        } else if(getState() == GameState.PLAY) {
-            //Oxygen is running out slowly
-            if(TimeService.GetTime() % (Player.CURRENT.armor / 2f + world.atmosphere + 0.5f) < 0.017f) {
-                Player.CURRENT.health--;
-                Player.CURRENT.oxygenEffect = GdxGame.particleService.obtain("oxygen", true);
-            }
+                batch.setProjectionMatrix(camera.combined);
+                batch.begin();
+                world.draw(batch);
+                batch.end();
 
-            camera.update();
-            world.update(delta);
-
-            batch.setProjectionMatrix(camera.combined);
-            batch.begin();
-            world.draw(batch);
-            batch.end();
-
-//			debugRender();
+                if(Player.CURRENT.d.x < 0) Player.CURRENT.d.x = -Player.CURRENT.speed;
+                Player.CURRENT.getBox().setPosition(Player.CURRENT.getBox().getPosition(VECTOR2).add(Player.CURRENT.d));
+                Player.CURRENT.checkCollisions();
+                break;
         }
-        //marks the player's current sector as explored
-        Sector playerSector = world.getSector(Player.CURRENT.getBox().getCenter(VECTOR2));
-        if(!playerSector.explored){
-            playerSector.explored = true;
-            DataService.setSectorExplored(playerSector, true);
-        }
-
         input.act(delta);
     }
 
     @SuppressWarnings("unused")
     private void debugRender() {
-        sr.setAutoShapeType(true);
-        sr.setProjectionMatrix(camera.combined);
-        sr.begin();
-        sr.setColor(Color.WHITE);
+        shapeRenderer.setAutoShapeType(true);
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin();
+        shapeRenderer.setColor(Color.WHITE);
         for(Entity e : world.getActiveEntities())
-            sr.rect(e.getX(), e.getY(), e.getWidth(), e.getHeight());
+            shapeRenderer.rect(e.getX(), e.getY(), e.getWidth(), e.getHeight());
 
-        sr.setColor(Color.BLUE);
+        shapeRenderer.setColor(Color.BLUE);
         Sector s = world.getSector(Player.CURRENT.getCenterX(), Player.CURRENT.getCenterY());
         for(int y=0; y<Sector.HEIGHT; y++)
             for(int x=0; x<Sector.WIDTH; x++)
                 if(!Character.isLetter(s.getChar(x, y)))
-                    sr.rect(s.x + x * Tile.WIDTH, s.y + y * Tile.HEIGHT, Tile.WIDTH, Tile.HEIGHT);
-        sr.end();
-
+                    shapeRenderer.rect(s.x + x * Tile.WIDTH, s.y + y * Tile.HEIGHT, Tile.WIDTH, Tile.HEIGHT);
+        shapeRenderer.end();
     }
 
     @Override
@@ -218,5 +208,24 @@ public class GameScreen implements Screen {
             DataService.save(Player.CURRENT);
             state = gameState;
         } else state = gameState;
+    }
+
+    private class DebugTraumaInputListener extends InputListener {
+        @Override
+        public boolean keyDown(InputEvent event, int keycode) {
+            if(Input.Keys.NUM_0 <= keycode && keycode <= Input.Keys.NUM_9) {
+                float amount = (keycode - 6) * 0.1f;
+                camera.addTrauma(amount);
+                return true;
+            }
+            return false;
+        }
+    }
+
+    private class ToggleTouchInputListener extends InputListener {
+        @Override
+        public void	touchUp(InputEvent event, float x, float y, int pointer, int button) {
+            setState(GameState.PLAY);
+        }
     }
 }

@@ -10,16 +10,12 @@ import com.shdwfghtr.explore.World;
 public class HUDTable extends Table {
     public static final int HEIGHT = Sector.HEIGHT * 3;
 
-    public HUDTable(Player player, World world, Skin skin){
+    public HUDTable(Player player, Table miniMap, Skin skin){
         super();
-        WorldMap worldMap = new WorldMap(world);
 
-        pad(2.0f);
-        add(new HealthTable(Player.CURRENT, skin))
-                .expandY().width(80).left().bottom();
-        add(new AmmoTable(player, skin)).expand().left().bottom();
-        add(worldMap.new WorldMiniMap()).width(Sector.WIDTH * 5).height(Sector.HEIGHT * 3).left();
-
+        add(new HealthTable(Player.CURRENT, skin)).expandY().width(80).left().bottom().pad(2);
+        add(new AmmoTable(player, skin)).expand().left().bottom().pad(2);
+        add(miniMap).left().pad(2);
     }
 
     @Override

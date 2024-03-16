@@ -16,7 +16,7 @@ import com.shdwfghtr.explore.World;
 
 public class TextureAtlasService implements Disposable {
     private final TextureAtlas environmentAtlas, bgAtlas, explosionAtlas, uiAtlas;
-    public TextureAtlas entityAtlas, sectorAtlas;
+    public TextureAtlas entityAtlas;
 
     public TextureAtlasService(AssetManagerService manager){
         bgAtlas = manager.GetResource("atlas/BG.atlas", TextureAtlas.class);
@@ -46,7 +46,7 @@ public class TextureAtlasService implements Disposable {
         return uiAtlas.findRegion(name);
     }
 
-    public Array<? extends TextureRegion> findEnvironmentRegions(String name) {
+    public Array<TextureAtlas.AtlasRegion> findEnvironmentRegions(String name) {
         return environmentAtlas.findRegions(name);
     }
 
@@ -54,7 +54,7 @@ public class TextureAtlasService implements Disposable {
         return environmentAtlas.findRegion(name);
     }
 
-    public void generateSectorAtlas(World world) {
+    public TextureAtlas generateSectorAtlas(World world) {
         Pixmap.Format format = Pixmap.Format.RGB565;
         int width = world.getWidth(), height = world.getHeight();
         PixmapPacker packer =
@@ -98,7 +98,7 @@ public class TextureAtlasService implements Disposable {
         TextureAtlas atlas = packer.generateTextureAtlas(
                 Texture.TextureFilter.Linear, Texture.TextureFilter.Linear, false);
         packer.dispose();
-        sectorAtlas = atlas;
+        return atlas;
     }
 
     @Override
@@ -112,9 +112,5 @@ public class TextureAtlasService implements Disposable {
 
     public Array<TextureAtlas.AtlasRegion> getEntityRegions() {
         return entityAtlas.getRegions();
-    }
-
-    public TextureRegion findSectorRegion(String name) {
-        return sectorAtlas.findRegion(name);
     }
 }

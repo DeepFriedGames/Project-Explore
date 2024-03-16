@@ -41,7 +41,6 @@ public class World {
 
     private final Array<Entity> activeEntities = new Array<>();
     private final Array<Entity> inactiveEntities = new Array<>();
-	private final Array<Entity> viewInterests = new Array<>();
     private final Array<Spawner> spawners = new Array<>();
 
     public final Sector[][] sectorMap;
@@ -53,10 +52,15 @@ public class World {
     public String name;
     public int index = 0;
     public float gravity, atmosphere;
+    private final TextureRegion backgroundRegion;
+    private final TextureRegion atmosphereRegion;
+    private Color atmosphereColor;
 
     public World(int width, int height) {
         this.sectorMap = new Sector[height][width];
         this.entityThread = new EntityUpdateThread();
+        backgroundRegion = GdxGame.textureAtlasService.findBackgroundRegion( "background" + index);
+        atmosphereRegion = GdxGame.textureAtlasService.findBackgroundRegion("fog");
     }
 
     public synchronized void update(float delta) {
@@ -96,10 +100,11 @@ public class World {
     }
 
     public void draw(Batch batch) {
-        drawBackgroundTexture(batch, "background" + index, palette[1], 0.92f, 0);
+        drawRegionInParallax(batch, backgroundRegion, palette[7], 0.92f, 0, 0);
         drawEntities(batch);
         drawTiles(batch);
-        drawBackgroundTexture(batch, "fog", new Color(1, 1, 1, atmosphere / 4), 1.0f, TimeService.GetTime());
+        atmosphereColor = new Color(1, 1, 1, atmosphere / 8f);
+        drawRegionInParallax(batch, atmosphereRegion, atmosphereColor, 1.0f, TimeService.GetTime(), 8 * MathUtils.sinDeg(TimeService.GetTime()));
     }
 
     private void drawTiles(Batch batch) {
@@ -149,25 +154,38 @@ public class World {
             entity.draw(batch);
     }
 
-    private void drawBackgroundTexture(Batch batch, String name, Color color, float parallax, float offset) throws NullPointerException {
-        TextureRegion bg = GdxGame.textureAtlasService.findBackgroundRegion(name);
+    //draws a region tiled with parallax scrolling
+    private void drawRegionInParallax(Batch batch, TextureRegion region, Color color, float parallax, float offsetX, float offsetY) {
+        if(region == null || GdxGame.getCamera() == null) return;
         Rectangle camera = GdxGame.getCamera().getBox();
-        if(bg == null) return;
-        //draws a parallax scrolling background image
-        int w = bg.getRegionWidth(),
-                h = bg.getRegionHeight();
-        int cutX = Math.round((camera.x * parallax + offset) % w),
-                cutY = h - Math.round((camera.y * parallax + offset) % h);
 
-        Color c = new Color(batch.getColor());
+        float regionWidth = region.getRegionWidth();
+        float regionHeight = region.getRegionHeight();
+        float drawX = camera.x * parallax + offsetX;
+        float drawY = camera.y * parallax + offsetY;
+
+        int widthsToDraw = MathUtils.ceil(camera.getWidth() / regionWidth);
+        int heightsToDraw = MathUtils.ceil(camera.getHeight() / regionHeight);
+        int regionLocalX = MathUtils.floor(drawX % regionWidth);
+        int regionLocalY = MathUtils.floor(drawY % regionHeight);
+
+        Color previousColor = new Color(batch.getColor());
         batch.setColor(color);
 
-        batch.draw(new TextureRegion(bg, cutX, 0, w - cutX, cutY), camera.x, camera.y);
-        batch.draw(new TextureRegion(bg, cutX, cutY, w - cutX, h - cutY), camera.x, camera.y + cutY);
-        batch.draw(new TextureRegion(bg, 0, 0, cutX, cutY), camera.x + w - cutX, camera.y);
-        batch.draw(new TextureRegion(bg, 0, cutY, cutX, h - cutY), camera.x + w - cutX, camera.y + cutY);
+        for(int w = 0; w <= widthsToDraw; w ++)
+            for(int h = 0; h <= heightsToDraw; h++){
+                batch.draw(region
+                        , camera.x - regionLocalX + w * regionWidth
+                        , camera.y - regionLocalY + h * regionHeight
+                );
+            }
 
-        batch.setColor(c.r, c.g, c.b, c.a);
+//        batch.draw(bg, camera.x - cutX, camera.y - cutY);
+//        batch.draw(bg, camera.x - cutX, camera.y - cutY + h);
+//        batch.draw(bg, camera.x - cutX + w, camera.y - cutY);
+//        batch.draw(bg, camera.x - cutX + w, camera.y - cutY + h);
+
+        batch.setColor(previousColor);
     }
 
     public Sector getSector(Vector2 worldPoint) {
@@ -188,9 +206,6 @@ public class World {
             inactiveEntities.add(entity);
         } else
             System.out.println(entity.getName() + " not added to world");
-		
-		if(entity.getImportance() > 0)
-            viewInterests.add(entity);
     }
 
     private void setActive(Entity e, boolean activate) {
@@ -212,7 +227,6 @@ public class World {
     public void removeEntity(Entity entity) {
         activeEntities.removeValue(entity, true);
         inactiveEntities.removeValue(entity, true);
-		viewInterests.removeValue(entity, true);
     }
 
     void addSpawner(Spawner spawner) {
@@ -242,10 +256,6 @@ public class World {
 
     private Entity[] getInactiveEntities() {
         return inactiveEntities.toArray(Entity.class);
-    }
-
-    Entity[] getInterests() {
-        return viewInterests.toArray(Entity.class);
     }
 
     private Spawner[] getSpawners() {

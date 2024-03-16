@@ -6,13 +6,11 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.shdwfghtr.entity.Entity;
 import com.shdwfghtr.entity.Item;
 import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.World;
-import com.shdwfghtr.screens.GameScreen;
 
 import java.util.ArrayList;
 import java.util.Collections;

@@ -36,7 +36,6 @@ public class Bomb extends Entity implements Pool.Poolable{
 
     private Bomb() {
         this.name = "bomb";
-        this.importance = 0.5f;
     }
 
     public void setPower(float magnitude) {

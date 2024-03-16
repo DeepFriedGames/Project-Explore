@@ -13,7 +13,6 @@ public abstract class Switch extends Entity {
 	protected Switch() {
 		super("door_switch_locked");
 		this.setSize(16, 16);
-		this.importance = 0.5f;
 	}
 
 	public void trigger() {

@@ -2,8 +2,7 @@ package com.shdwfghtr.screens;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -39,7 +38,6 @@ import java.util.Random;
  * These star systems will have loaders to explore which will take the player to the game screen.
  */
 public class TravelScreen extends MenuScreen {
-    private static final int BUTTON_SIZE = 48;//these buttons are square
     private static final int starSize = 256;
 
     private final Random random;
@@ -110,7 +108,6 @@ public class TravelScreen extends MenuScreen {
 
     @Override
     public void render(float delta) {
-        getChildren().sort(comparator);
         super.render(delta);
 
         for(WorldUIGroup worldUiGroup : worldUIGroups){
@@ -140,21 +137,20 @@ public class TravelScreen extends MenuScreen {
         if(pauseMenu.hasParent()) {
             GdxGame.audioService.playSound("select");
             GdxGame.audioService.setVolume(1f);
-            pauseMenu.remove();
+            pauseMenu.addAction(Actions.sequence(
+                    Actions.touchable(Touchable.disabled)
+                    , Actions.fadeOut(0.6f)
+                    , Actions.removeActor()
+            ));
         } else {
-            int size = pauseMenu.items.size;
-            for (int n = 0; n < size; n++) {
-                Actor item = pauseMenu.items.get(n);
-                if (item.hasParent()) continue;
-                Actor inv = pauseMenu.findActor("Inventory Label");
-                item.setPosition(inv.getX(), inv.getY() - item.getHeight() * (n + 2));
-                pauseMenu.addActor(item);
-            }
-
-            pauseMenu.setTouchable(Touchable.childrenOnly);
-            pauseMenu.addAction(Actions.fadeIn(0.6f));
+            GdxGame.audioService.playSound("select");
+            GdxGame.audioService.setVolume(1f);
             TravelScreen.this.addActor(pauseMenu);
-            GdxGame.uiService.getStage().setKeyboardFocus(pauseMenu);
+            TravelScreen.this.getStage().setKeyboardFocus(pauseMenu);
+            pauseMenu.addAction(Actions.sequence(
+                    Actions.fadeIn(0.6f)
+                    , Actions.touchable(Touchable.childrenOnly)
+            ));
         }
     }
 
@@ -166,14 +162,21 @@ public class TravelScreen extends MenuScreen {
             super();
 
             star = new StarActor();
-            star.setBounds((this.getWidth() - starSize) / 2f, (this.getHeight() - starSize) / 2f
-                    , starSize, starSize);
+            star.setPosition((getWidth() - starSize) / 2f, (getHeight() - starSize) / 2f);
+            star.setSize(starSize, starSize);
+            star.setColor(worldUIGroups[0].worldLoader.world.palette[7]);
             this.addActor(star);
 
             for(WorldUIGroup worldUIGroup : TravelScreen.this.worldUIGroups) {
                 this.addActor(worldUIGroup.worldImage);
                 worldImages.add(worldUIGroup.worldImage);
             }
+        }
+
+        @Override
+        public void act(float delta) {
+            super.act(delta);
+            this.getChildren().sort(comparator);
         }
 
         public void addOrbitActionsToWorldImages() {
@@ -190,25 +193,26 @@ public class TravelScreen extends MenuScreen {
         }
     }
 
-	private class StarActor extends Actor {
-        private final Animation<TextureRegion> animation;
+	private class StarActor extends Image {
+        private final Animation<TextureRegionDrawable> animation;
 
         private StarActor() {
-            Array<? extends TextureRegion> starAnimationFrames = GdxGame.textureAtlasService.findEnvironmentRegions("star");
-            this.animation = new Animation<>(0.2f, starAnimationFrames, Animation.PlayMode.LOOP);
+            Array<TextureAtlas.AtlasRegion> starAnimationFrames = GdxGame.textureAtlasService.findEnvironmentRegions("star");
+            Array<TextureRegionDrawable> frames = new Array<>(starAnimationFrames.size);
+            for(TextureAtlas.AtlasRegion region : starAnimationFrames){
+                frames.add(new TextureRegionDrawable(region));
+            }
+            this.animation = new Animation<>(0.2f, frames);
+            this.animation.setPlayMode(Animation.PlayMode.LOOP);
             this.setTouchable(Touchable.disabled);
             this.setName("Star");
         }
 
         @Override
-        public void draw(Batch batch, float parentAlpha) {
-            Color batchColor = batch.getColor();
-
-            batch.setColor(GdxGame.fadeColor);
-            batch.draw(animation.getKeyFrame(TimeService.GetTime()), getX(), getY(), getWidth(), getHeight());
-            batch.setColor(batchColor);
+        public void act(float delta) {
+            super.act(delta);
+            this.setDrawable(animation.getKeyFrame(TimeService.GetTime()));
         }
-
     }
 
     public class WorldOrbitAction extends Action {

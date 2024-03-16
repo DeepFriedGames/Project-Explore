@@ -2,67 +2,79 @@ package com.shdwfghtr.ui;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.scenes.scene2d.ui.VerticalGroup;
+import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.shdwfghtr.asset.ConversionService;
 import com.shdwfghtr.asset.DataService;
 import com.shdwfghtr.asset.InventoryService;
-import com.shdwfghtr.asset.PaletteService;
 import com.shdwfghtr.entity.Player;
 import com.shdwfghtr.explore.GdxGame;
 
-public class PauseMenuTable extends Table {
+public class PauseMenuTable extends Window {
     private final TextureRegion playerTextureRegion = GdxGame.textureAtlasService.findEntityRegion("player_stand_front");
-    private final TextureRegion backgroundTextureRegion = GdxGame.textureAtlasService.findUIRegion("pauseMenu");
     final float menuBorder =  15f;
     final float menuBreak = getWidth() /4f;
-    public final Array<Actor> items = new Array<>();
 
-    public PauseMenuTable(Player player) {
-        setBackground(new TextureRegionDrawable(backgroundTextureRegion));
+    public WorldUIGroup.WorldMap worldMap;
+
+    public PauseMenuTable() {
+        super("Information", GdxGame.uiService.getSkin());
         setName("Pause Menu");
-
-        PlayerImage playerImage = this.new PlayerImage();
-        addActor(playerImage);
-
-        //also adds the player's stats to the pause menu
-        if(player != null) {
-            Actor stats = this.new PlayerStatisticsActor(player);
-            stats.setPosition(menuBorder, playerImage.getY() - menuBorder);
-            addActor(stats);
-
-            Actor inventoryActor = new InventoryActor();
-            inventoryActor.setPosition(menuBorder, stats.getY() - GdxGame.uiService.getBodyFont().getLineHeight() * 5);
-            addActor(inventoryActor);
-        }
-
-
-        items.addAll(InventoryService.getInventoryActors());
-        for(Actor item : items){
-            item.setSize(getWidth() / 4, GdxGame.uiService.getBodyFont().getLineHeight());
-            item.setTouchable(Touchable.enabled);
-        }
-    }
-
-    public PauseMenuTable(Player player, WorldUIGroup... worldUIGroups){
-        this(player);
-        //setBounds(BUTTON_SIZE, BUTTON_SIZE, GdxGame.uiService.getStage().getWidth() - 2*BUTTON_SIZE, GdxGame.uiService.getStage().getHeight() - 2*BUTTON_SIZE);
-        setLayoutEnabled(false);
         setTouchable(Touchable.disabled);
-        addActor(this.new SystemInfoGroup(worldUIGroups));
     }
+
+    public PauseMenuTable(Player player, WorldUIGroup... worldUIGroups) {
+        this();
+
+        String header = "System " + ConversionService.toString(Math.abs(DataService.getSeed()));
+        Label.LabelStyle bodyStyle = new Label.LabelStyle(GdxGame.uiService.getBodyFont(), Color.WHITE);
+
+        Table playerTable = new Table();
+        Image playerImage = this.new PlayerImage();
+        playerTable.add(playerImage).prefSize(48, 96).top().pad(12);
+        if (player != null) playerTable.add(this.new PlayerStatisticsActor(player));
+        playerTable.add(this.new InventoryGroup()).expandY();
+
+        Table worldsTable = new Table();
+        for(WorldUIGroup worldUIGroup : worldUIGroups) {
+            Image worldImage = worldUIGroup.new WorldImage();
+            worldImage.addListener(worldUIGroup.new WorldClickListener());
+
+            Label worldLabel = worldUIGroup.new WorldInformationLabel();
+            worldLabel.addListener(worldUIGroup.new WorldClickListener());
+
+            worldsTable.add(worldImage).prefSize(32).pad(12);
+            worldsTable.add(worldLabel).pad(12);
+            worldsTable.row();
+        }
+
+        add(new Label("Player", bodyStyle)).pad(12).center();
+        add(new Label(header, bodyStyle)).expandX().pad(12).center();
+        row();
+        add(playerTable).pad(6).top().expandY();
+        add(worldsTable).pad(6).top().expand();
+    }
+
     public PauseMenuTable(Player player, WorldUIGroup worldUIGroup) {
-        this(player);
-        addActor(worldUIGroup.new WorldInformationLabel());
+        this();
+        this.worldMap = worldUIGroup.new WorldMap();
+
+        if(player != null) {
+            add(this.new PlayerImage()).pad(12);
+            add(this.new PlayerStatisticsActor(player)).pad(12);
+            add(worldUIGroup.new WorldImage()).pad(12);
+            add(worldUIGroup.new WorldInformationLabel()).pad(12);
+            row();
+            add(this.new InventoryGroup()).top().pad(12);
+            add(worldMap).pad(6).expand();
+        }
     }
 
    private class PlayerImage extends Image {
@@ -110,43 +122,14 @@ public class PauseMenuTable extends Table {
        }
    }
 
-   private class InventoryActor extends Actor {
-       private InventoryActor() {
-           this.setName("Inventory Label");
+   private class InventoryGroup extends VerticalGroup {
+       private InventoryGroup() {
+           this.setName("Inventory");
            this.setTouchable(Touchable.disabled);
+
+           for(Actor item : InventoryService.getInventoryActors()){
+               add(item);
+           }
        }
-
-       @Override
-       public void draw(Batch batch, float parentAlpha) {
-           GdxGame.uiService.getBodyFont().setColor(1, 1, 1, parentAlpha);
-           GdxGame.uiService.getBodyFont().draw(batch, "Inventory", getX(), getY());
-           GdxGame.uiService.getBodyFont().setColor(Color.WHITE);
-       }
-   }
-
-   private class SystemInfoGroup extends Group {
-       private SystemInfoGroup(WorldUIGroup... worldUIGroups) {
-            GlyphLayout glyphLayout = new GlyphLayout();
-           String header = "System " + ConversionService.toString(Math.abs(DataService.getSeed()));
-            Label menuHeader = new Label(header, GdxGame.uiService.getSkin(), "title", PaletteService.getPalette("ui")[1]);
-            glyphLayout.setText(GdxGame.uiService.getBodyFont(), header);
-            menuHeader.setSize(glyphLayout.width, glyphLayout.height);
-            menuHeader.setPosition(menuBreak + menuBorder*2, getHeight() - menuHeader.getHeight() - menuBorder);
-            menuHeader.setTouchable(Touchable.disabled);
-            addActor(menuHeader);
-
-            for(int i = 0; i< worldUIGroups.length; i++) {
-                Label label = worldUIGroups[i].new WorldInformationLabel();
-                float x = menuHeader.getX(),
-                        y = menuHeader.getY() - label.getHeight() * (i + 1);
-                if(y <= 0) {
-                    x += menuBreak + 2 * menuBorder;
-                    y += label.getHeight() * 5;
-                }
-                label.addListener(worldUIGroups[i].new WorldClickListener());
-                label.setPosition(x, y);
-                addActor(label);
-            }
-        }
    }
 }

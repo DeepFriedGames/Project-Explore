@@ -13,8 +13,8 @@ import com.shdwfghtr.asset.ConversionService;
 import com.shdwfghtr.asset.DataService;
 import com.shdwfghtr.asset.InventoryService;
 import com.shdwfghtr.asset.OptionsService;
-import com.shdwfghtr.explore.GameCamera;
 import com.shdwfghtr.explore.GdxGame;
+import com.shdwfghtr.explore.Sector;
 
 public class OptionsMenuScreen extends MenuScreen {
 
@@ -41,7 +41,7 @@ public class OptionsMenuScreen extends MenuScreen {
                 if(checkFullscreen.isChecked())
                     Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
                 else
-                    Gdx.graphics.setWindowedMode(GameCamera.WIDTH * 3, GameCamera.HEIGHT * 3);
+                    Gdx.graphics.setWindowedMode(Sector.pWIDTH, Sector.pHEIGHT);
 
                 OptionsService.toggleFullscreen();
             }

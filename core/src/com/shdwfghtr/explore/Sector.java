@@ -3,13 +3,12 @@ package com.shdwfghtr.explore;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.math.Rectangle;
-import com.shdwfghtr.screens.GameScreen;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 
 public class Sector {
-	public static final int WIDTH = 20, HEIGHT = 18;
+	public static final int WIDTH = 17, HEIGHT = 14; //20, 18 in future
 	public static final int pHEIGHT = HEIGHT * Tile.HEIGHT;
 	public static final int pWIDTH = WIDTH * Tile.WIDTH;
 	private static final Rectangle RECTANGLE = new Rectangle();
@@ -33,7 +32,12 @@ public class Sector {
 
 	public char getChar(int xi, int yi) {
 		//returns a tile based on indices
-		return charMap[yi][xi];
+		try {
+			return charMap[yi][xi];
+		} catch(ArrayIndexOutOfBoundsException ex){
+			System.out.println(ex.getMessage());
+			return ' ';
+		}
 	}
 
 	char getChar(float x, float y) {

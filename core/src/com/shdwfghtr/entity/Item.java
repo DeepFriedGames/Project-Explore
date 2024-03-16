@@ -12,13 +12,11 @@ public class Item extends Entity {
 
     Item() {
         super();
-        this.importance = 0.15f;
     }
 
     public Item(String name, float x, float y) {
         super(name, x, y, 18, 18);
         setScale(8 / 9f);
-        this.importance = 0.7f;
     }
 
     @Override

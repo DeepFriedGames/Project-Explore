@@ -123,10 +123,8 @@ public class ControllerService {
             return new GamepadHandler();
         else if(isTouch())
             return new TouchHandler();
-        else if(isKeyboard())
+        else
             return new KeyboardHandler();
-
-        return null;
     }
 
     public static boolean isKeyboard() {

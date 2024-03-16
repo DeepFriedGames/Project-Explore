@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.badlogic.gdx.math.MathUtils;
 import com.shdwfghtr.asset.AssetManagerService;
 import com.shdwfghtr.asset.AudioService;
+import com.shdwfghtr.asset.ControllerService;
 import com.shdwfghtr.asset.OptionsService;
 import com.shdwfghtr.asset.ParticleService;
 import com.shdwfghtr.asset.TextureAtlasService;
@@ -36,14 +37,18 @@ public class GdxGame extends com.badlogic.gdx.Game {
 	}
 
 	public static GameCamera getCamera() {
-		if(Gdx.app.getApplicationListener() instanceof GdxGame){
-			GdxGame game = (GdxGame) Gdx.app.getApplicationListener();
-			if(game.getScreen() instanceof GameScreen){
-				GameScreen screen = (GameScreen) game.getScreen();
-				return screen.camera;
+		try {
+			if(Gdx.app.getApplicationListener() instanceof GdxGame){
+				GdxGame game = (GdxGame) Gdx.app.getApplicationListener();
+				if(game.getScreen() instanceof GameScreen){
+					GameScreen screen = (GameScreen) game.getScreen();
+					return screen.camera;
+				}
 			}
+		} catch (Exception ex){
+			System.out.println("Bad getCamera call");
 		}
-		return new GameCamera();
+		return new GameCamera(0, 0);
 	}
 
 	@Override
@@ -51,6 +56,7 @@ public class GdxGame extends com.badlogic.gdx.Game {
 		//Generates the loading screen which will load all assets asynchronously
 		this.assetService = new AssetManagerService();
 		this.particleService = new ParticleService();
+		ControllerService.initializeController();
 
 		if(OptionsService.IsFullScreen())
 			Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());

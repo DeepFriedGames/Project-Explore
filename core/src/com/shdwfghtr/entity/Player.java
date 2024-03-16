@@ -47,7 +47,6 @@ public class Player extends Entity {
         this.power = 3;
         this.speed = 1.5f; //pixels per second
         this.persistent = true;
-        this.importance = 1.0f;
         setSize(getRegionWidth() * SCALE, getRegionHeight() * SCALE);
         setScale(1 / SCALE);
         setOrigin(getWidth() / 2, 0);
