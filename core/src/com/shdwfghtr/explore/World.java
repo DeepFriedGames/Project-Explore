@@ -51,16 +51,17 @@ public class World {
     public Color[] palette;
     public String name;
     public int index = 0;
-    public float gravity, atmosphere;
+    private float gravity, atmosphere;
     private final TextureRegion backgroundRegion;
-    private final TextureRegion atmosphereRegion;
+    private TextureRegion atmosphereRegion;
+    private WorldFunction atmosphereFunction;
     private Color atmosphereColor;
 
     public World(int width, int height) {
         this.sectorMap = new Sector[height][width];
         this.entityThread = new EntityUpdateThread();
         backgroundRegion = GdxGame.textureAtlasService.findBackgroundRegion( "background" + index);
-        atmosphereRegion = GdxGame.textureAtlasService.findBackgroundRegion("fog");
+        atmosphereRegion = GdxGame.textureAtlasService.findBackgroundRegion("fog");  //TODO use set atmosphere for this
     }
 
     public synchronized void update(float delta) {
@@ -103,8 +104,14 @@ public class World {
         drawRegionInParallax(batch, backgroundRegion, palette[7], 0.92f, 0, 0);
         drawEntities(batch);
         drawTiles(batch);
-        atmosphereColor = new Color(1, 1, 1, atmosphere / 8f);
-        drawRegionInParallax(batch, atmosphereRegion, atmosphereColor, 1.0f, TimeService.GetTime(), 8 * MathUtils.sinDeg(TimeService.GetTime()));
+        drawRegionInParallax(batch, atmosphereRegion, atmosphereColor, 1.0f, atmosphereFunction);
+    }
+
+    public void setAtmosphere(float atmosphere, TextureRegion atmosphereRegion, AtmosphereFunction function) {
+	this.atmosphere = atmosphere;
+        this.atmosphereColor = new Color(1, 1, 1, atmosphere / 8f);
+	this.atmosphereRegion = atmosphereRegion;
+	this.atmosphereFunction = function;
     }
 
     private void drawTiles(Batch batch) {
@@ -224,7 +231,8 @@ public class World {
         }
     }
 
-    public void removeEntity(Entity entity) {
+    public void removeEntity(Entity entity) {  
+	    //TODO sector based determinism of entities to call update on
         activeEntities.removeValue(entity, true);
         inactiveEntities.removeValue(entity, true);
     }
