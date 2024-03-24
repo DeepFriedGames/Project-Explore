@@ -1,11 +1,12 @@
 package com.shdwfghtr.ui;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -19,117 +20,122 @@ import com.shdwfghtr.explore.GdxGame;
 
 public class PauseMenuTable extends Window {
     private final TextureRegion playerTextureRegion = GdxGame.textureAtlasService.findEntityRegion("player_stand_front");
-    final float menuBorder =  15f;
-    final float menuBreak = getWidth() /4f;
 
-    public WorldUIGroup.WorldMap worldMap;
-
-    public PauseMenuTable() {
+    public PauseMenuTable(String header, Player player) {
         super("Information", GdxGame.uiService.getSkin());
+
         setName("Pause Menu");
         setTouchable(Touchable.disabled);
-    }
+        setFillParent(true);
+        setResizable(false);
+        setMovable(false);
+        setVisible(false);
+        setColor(1, 1, 1, 0f);
 
-    public PauseMenuTable(Player player, WorldUIGroup... worldUIGroups) {
-        this();
-
-        String header = "System " + ConversionService.toString(Math.abs(DataService.getSeed()));
         Label.LabelStyle bodyStyle = new Label.LabelStyle(GdxGame.uiService.getBodyFont(), Color.WHITE);
-
-        Table playerTable = new Table();
-        Image playerImage = this.new PlayerImage();
-        playerTable.add(playerImage).prefSize(48, 96).top().pad(12);
-        if (player != null) playerTable.add(this.new PlayerStatisticsActor(player));
-        playerTable.add(this.new InventoryGroup()).expandY();
-
-        Table worldsTable = new Table();
-        for(WorldUIGroup worldUIGroup : worldUIGroups) {
-            Image worldImage = worldUIGroup.new WorldImage();
-            worldImage.addListener(worldUIGroup.new WorldClickListener());
-
-            Label worldLabel = worldUIGroup.new WorldInformationLabel();
-            worldLabel.addListener(worldUIGroup.new WorldClickListener());
-
-            worldsTable.add(worldImage).prefSize(32).pad(12);
-            worldsTable.add(worldLabel).pad(12);
-            worldsTable.row();
-        }
-
         add(new Label("Player", bodyStyle)).pad(12).center();
         add(new Label(header, bodyStyle)).expandX().pad(12).center();
         row();
-        add(playerTable).pad(6).top().expandY();
-        add(worldsTable).pad(6).top().expand();
+        add(this.new PlayerTable(player)).pad(6).top().expandY();
     }
 
-    public PauseMenuTable(Player player, WorldUIGroup worldUIGroup) {
-        this();
-        this.worldMap = worldUIGroup.new WorldMap();
-
-        if(player != null) {
-            add(this.new PlayerImage()).pad(12);
-            add(this.new PlayerStatisticsActor(player)).pad(12);
-            add(worldUIGroup.new WorldImage()).pad(12);
-            add(worldUIGroup.new WorldInformationLabel()).pad(12);
-            row();
-            add(this.new InventoryGroup()).top().pad(12);
-            add(worldMap).pad(6).expand();
-        }
+    public PauseMenuTable(Player player, WorldUIGroup... worldUIGroups) {
+        this("System " + ConversionService.toString(Math.abs(DataService.getSeed()))
+            , player);
+        add(this.new WorldsTable(worldUIGroups)).pad(6).top().expand();
     }
 
-   private class PlayerImage extends Image {
-       PlayerImage(){
-           super(playerTextureRegion);
-           this.setSize(playerTextureRegion.getRegionWidth() * 3
-                   , playerTextureRegion.getRegionHeight() * 3);
-           this.setPosition(menuBreak/2 - this.getWidth()/2
-                   , getHeight() - this.getHeight() - menuBorder);
-           this.setTouchable(Touchable.disabled);
-       }
-   }
+    public PauseMenuTable(Player player, WorldUIGroup.WorldMap worldMap) {
+        this("World " + worldMap.getName(), player);
+        add(worldMap).pad(6).top().expand();
+    }
 
     @Override
     protected void setStage(Stage stage) {
         super.setStage(stage);
-
-        if(stage != null)
-            setBounds(0, 0,stage.getWidth(), stage.getHeight() - HUDTable.HEIGHT - 1);
+        if(stage != null) {
+            stage.setKeyboardFocus(this);
+        }
     }
 
-    private class PlayerStatisticsActor extends Actor {
-        private final Player player;
-       private PlayerStatisticsActor(Player player) {
-           this.player = player;
-           this.setTouchable(Touchable.disabled);
-       }
+    public void toggle() {
+        GdxGame.audioService.playSound("select");
+        GdxGame.audioService.setVolume(1f);
+        if (isVisible()) {
+            this.addAction(Actions.sequence(
+                    Actions.touchable(Touchable.disabled)
+                    , Actions.fadeOut(0.6f)
+                    , Actions.visible(false)
+            ));
+        } else {
+            this.addAction(Actions.sequence(
+                    Actions.touchable(Touchable.childrenOnly)
+                    , Actions.visible(true)
+                    , Actions.fadeIn(0.6f)
+            ));
+        }
+    }
 
-       @Override
-       public void draw(Batch batch, float parentAlpha) {
-           GdxGame.uiService.getBodyFont().setColor(1, 1, 1, parentAlpha);
-           GdxGame.uiService.getBodyFont().draw(batch, "Statistics", getX(), getY());
-           float power = player.power;
-           float range = Player.calculateBulletRange(player.bullet_life);
-           float speed = Player.calculateSpeed(player.speed);
-           float jumpHeight = Player.calculateJumpHeight(player.jump_speed);
-           power *= 100; //round power to the nearest 100th
-           power = Math.round(power);
-           power /= 100;
-           GdxGame.uiService.getBodyFont().draw(batch, "Power: " + power + " k", getX() + menuBorder, getY() - GdxGame.uiService.getBodyFont().getLineHeight());
-           GdxGame.uiService.getBodyFont().draw(batch, "Range: " + range + " m", getX() + menuBorder, getY() - GdxGame.uiService.getBodyFont().getLineHeight() * 2);
-           GdxGame.uiService.getBodyFont().draw(batch, "Speed: " + speed + " m/s", getX() + menuBorder, getY() - GdxGame.uiService.getBodyFont().getLineHeight() * 3);
-           GdxGame.uiService.getBodyFont().draw(batch, "Jump:  " + jumpHeight + " m", getX() + menuBorder, getY() - GdxGame.uiService.getBodyFont().getLineHeight() * 4);
-           GdxGame.uiService.getBodyFont().setColor(Color.WHITE);
-       }
-   }
+    private class InventoryGroup extends VerticalGroup {
+        private InventoryGroup() {
+            this.setName("Inventory");
+            this.setTouchable(Touchable.disabled);
 
-   private class InventoryGroup extends VerticalGroup {
-       private InventoryGroup() {
-           this.setName("Inventory");
-           this.setTouchable(Touchable.disabled);
+            for (Actor item : InventoryService.getInventoryActors()) {
+                add(item);
+            }
+        }
+    }
 
-           for(Actor item : InventoryService.getInventoryActors()){
-               add(item);
-           }
-       }
-   }
+    private class PlayerTable extends Table {
+        Label powerLabel, rangeLabel, speedLabel, jumpLabel;
+
+        public PlayerTable(Player player) {
+            super(PauseMenuTable.this.getSkin());
+
+            Image playerImage = new Image(playerTextureRegion);
+            powerLabel = new Label("Power:  k", getSkin());
+            rangeLabel = new Label("Range:  m", getSkin());
+            speedLabel = new Label("Speed:  m/s", getSkin());
+            jumpLabel = new Label("Jump:  m", getSkin());
+
+            add(playerImage).prefSize(48, 96).top().pad(12).row();
+            add(new Label("Statistics", getSkin())).left().row();
+            add(powerLabel).left().row();
+            add(rangeLabel).left().row();
+            add(speedLabel).left().row();
+            add(jumpLabel).left().row();
+            add(PauseMenuTable.this.new InventoryGroup()).expandY();
+            if (player != null) setPlayer(player);
+        }
+
+        private void setPlayer(Player player) {
+            float power = MathUtils.round(player.power * 100) / 100f;
+            float range = Player.calculateBulletRange(player.bullet_life);
+            float speed = Player.calculateSpeed(player.speed);
+            float jumpHeight = Player.calculateJumpHeight(player.jump_speed);
+            powerLabel.setText("Power: " + power + " k");
+            rangeLabel.setText("Range: " + range + " m");
+            speedLabel.setText("Speed: " + speed + " m/s");
+            jumpLabel.setText("Vertical: " + jumpHeight + " m");
+        }
+    }
+
+    private class WorldsTable extends Table {
+        public WorldsTable(WorldUIGroup... worldUIGroups) {
+            super(PauseMenuTable.this.getSkin());
+
+            for (WorldUIGroup worldUIGroup : worldUIGroups) {
+                Image worldImage = worldUIGroup.new WorldImage();
+                worldImage.addListener(worldUIGroup.new WorldClickListener());
+
+                Label worldLabel = worldUIGroup.new WorldInformationLabel();
+                worldLabel.addListener(worldUIGroup.new WorldClickListener());
+
+                add(worldImage).prefSize(32).pad(12);
+                add(worldLabel).pad(12);
+                row();
+            }
+        }
+    }
 }

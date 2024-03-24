@@ -1,10 +1,16 @@
 package com.shdwfghtr.explore;
 
+import com.badlogic.gdx.Application;
+import com.badlogic.gdx.ApplicationListener;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.profiling.GLProfiler;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.scenes.scene2d.Action;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.shdwfghtr.asset.AssetManagerService;
 import com.shdwfghtr.asset.AudioService;
 import com.shdwfghtr.asset.ControllerService;
@@ -15,6 +21,7 @@ import com.shdwfghtr.asset.TimeService;
 import com.shdwfghtr.asset.UserInterfaceService;
 import com.shdwfghtr.screens.GameScreen;
 import com.shdwfghtr.screens.SplashScreen;
+import com.shdwfghtr.ui.GoToScreenAction;
 
 @SuppressWarnings("ALL")
 public class GdxGame extends com.badlogic.gdx.Game {
@@ -49,6 +56,18 @@ public class GdxGame extends com.badlogic.gdx.Game {
 			System.out.println("Bad getCamera call");
 		}
 		return new GameCamera(0, 0);
+	}
+
+	public static void goToScreen(final Screen screen){
+		ApplicationListener app = Gdx.app.getApplicationListener();
+		if(app instanceof Game){
+			final Game game = (Game) app;
+			GdxGame.uiService.getStage().addAction(Actions.sequence(
+					Actions.fadeOut(0.5f)
+					, new GoToScreenAction(game, screen)
+					, Actions.fadeIn(0.5f)
+			));
+		}
 	}
 
 	@Override

@@ -27,16 +27,13 @@ import com.shdwfghtr.entity.Player;
 import com.shdwfghtr.explore.GdxGame;
 import com.shdwfghtr.explore.WorldLoader;
 import com.shdwfghtr.ui.ExitGameDialog;
+import com.shdwfghtr.ui.GoToScreenAction;
 import com.shdwfghtr.ui.PauseMenuTable;
 import com.shdwfghtr.ui.WorldUIGroup;
 
 import java.util.Comparator;
 import java.util.Random;
 
-/**
- * This screen allows the player to move a ship about a galaxy and chose star systems to explore.
- * These star systems will have loaders to explore which will take the player to the game screen.
- */
 public class TravelScreen extends MenuScreen {
     private static final int starSize = 256;
 
@@ -45,6 +42,7 @@ public class TravelScreen extends MenuScreen {
     private final WorldUIGroup[] worldUIGroups;
 
     private PauseMenuTable pauseMenu;
+    private boolean leaving = false;
 
     public TravelScreen() {
         random = new Random(DataService.getSeed());
@@ -61,9 +59,8 @@ public class TravelScreen extends MenuScreen {
     @Override
     public void show() {
         super.show();
-
         GdxGame.audioService.setMusic("Intro", true);
-        GdxGame.uiService.DropCurtain(2.0f);
+        GdxGame.fadeColor = worldUIGroups[0].worldLoader.world.palette[7];
 
         Table table = new Table();
         table.setBounds(0, 0, getWidth(), getHeight());
@@ -74,10 +71,13 @@ public class TravelScreen extends MenuScreen {
         table.add(header).pad(12).colspan(3);
         table.row();
 
-        StarSystemGroup starSystem = this.new StarSystemGroup();
-        table.add(starSystem).expand().colspan(3);
-        starSystem.addOrbitActionsToWorldImages();
+        Group starSystemGroup = this.new StarSystemGroup();
+        table.add(starSystemGroup).expand().colspan(3).fill();
         table.row();
+
+        pauseMenu = new PauseMenuTable(Player.CURRENT, worldUIGroups);
+        pauseMenu.addListener(this.new PauseMenuInputListener());
+        starSystemGroup.addActor(pauseMenu);
 
         ImageButton newSystemButton = new ImageButton(GdxGame.uiService.getSkin());
         newSystemButton.addListener(this.new NewSystemChangeListener());
@@ -99,28 +99,25 @@ public class TravelScreen extends MenuScreen {
         infoButton.add("Information").pad(6);
         infoButton.setName("Information");
         table.add(infoButton).expandX().center();
-
-        pauseMenu = new PauseMenuTable(Player.CURRENT, worldUIGroups);
-        pauseMenu.addListener(this.new PauseMenuInputListener());
-
-        GdxGame.fadeColor = worldUIGroups[0].worldLoader.world.palette[7];
     }
 
     @Override
     public void render(float delta) {
         super.render(delta);
+        if(leaving) return;
 
-        for(WorldUIGroup worldUiGroup : worldUIGroups){
-            if(worldUiGroup.worldLoader.getProgress() >= 1) {
+        for (WorldUIGroup worldUiGroup : worldUIGroups) {
+            if (worldUiGroup.worldLoader.getProgress() >= 1) {
                 PaletteService.recolorAtlasByRegion(PaletteService.getPalette("environment"),
                         worldUiGroup.worldLoader.world.palette, GdxGame.textureAtlasService.entityAtlas,
                         "bossSheet", "enemySheet");
                 worldUiGroup.worldLoader.generateTileRegions();
                 GdxGame.textureAtlasService.generateSectorAtlas(worldUiGroup.worldLoader.world);
                 worldUiGroup.worldLoader.createEntities();
-                GdxGame.uiService.fadeOutCurtain(0.5f);
-                goToScreen(new GameScreen(worldUiGroup));
-            } else if(worldUiGroup.worldLoader.getProgress() > 0) {
+
+                GdxGame.goToScreen(new GameScreen(worldUiGroup));
+                leaving = true;
+            } else if (worldUiGroup.worldLoader.getProgress() > 0) {
                 GdxGame.uiService.getStage().getRoot().setTouchable(Touchable.disabled);
                 GdxGame.audioService.fadeOut(0.5f);
             }
@@ -133,63 +130,51 @@ public class TravelScreen extends MenuScreen {
         GdxGame.uiService.getStage().addActor(exitDialog);
     }
 
-    private void TogglePauseMenu() {
-        if(pauseMenu.hasParent()) {
-            GdxGame.audioService.playSound("select");
-            GdxGame.audioService.setVolume(1f);
-            pauseMenu.addAction(Actions.sequence(
-                    Actions.touchable(Touchable.disabled)
-                    , Actions.fadeOut(0.6f)
-                    , Actions.removeActor()
-            ));
-        } else {
-            GdxGame.audioService.playSound("select");
-            GdxGame.audioService.setVolume(1f);
-            TravelScreen.this.addActor(pauseMenu);
-            TravelScreen.this.getStage().setKeyboardFocus(pauseMenu);
-            pauseMenu.addAction(Actions.sequence(
-                    Actions.fadeIn(0.6f)
-                    , Actions.touchable(Touchable.childrenOnly)
-            ));
-        }
-    }
-
     private class StarSystemGroup extends Group {
-        Actor star;
-        Array<Image> worldImages = new Array<>();
-
         public StarSystemGroup() {
             super();
 
-            star = new StarActor();
-            star.setPosition((getWidth() - starSize) / 2f, (getHeight() - starSize) / 2f);
+            Actor star = new StarActor();
             star.setSize(starSize, starSize);
-            star.setColor(worldUIGroups[0].worldLoader.world.palette[7]);
+            Color color = worldUIGroups[0].worldLoader.world.palette[7];
+            float[] hsv = new float[3];
+            hsv = color.toHsv(hsv);
+            hsv[1] = 50 / 255f;
+            star.setColor(color.fromHsv(hsv));
             this.addActor(star);
 
             for(WorldUIGroup worldUIGroup : TravelScreen.this.worldUIGroups) {
-                this.addActor(worldUIGroup.worldImage);
-                worldImages.add(worldUIGroup.worldImage);
+                Image worldImage = worldUIGroup.new WorldImage();
+                this.addActor(worldImage);
+                worldImage.addListener(worldUIGroup.new WorldClickListener());
             }
+        }
+
+        @Override
+        protected void setParent(Group parent) {
+            super.setParent(parent);
+            for (Actor actor : getChildren())
+                if (actor instanceof WorldUIGroup.WorldImage) {
+                    WorldUIGroup.WorldImage worldImage = (WorldUIGroup.WorldImage) actor;
+                    float c = random.nextFloat();
+                    float radius = c * (parent.getWidth() - starSize) / 2f + starSize / 2f;
+                    float angle = c * 2 * MathUtils.PI;
+                    float speed = c / 100f;
+                    Action orbitAction = TravelScreen.this.new WorldOrbitAction(
+                            parent.getWidth() / 2f, parent.getHeight() / 2f
+                            , radius, angle, speed
+                    );
+                    worldImage.addAction(Actions.forever(orbitAction));
+                } else if (actor instanceof StarActor) {
+                    actor.setPosition((parent.getWidth() - actor.getWidth()) / 2f
+                            , (parent.getHeight() - actor.getHeight()) / 2f);
+                }
         }
 
         @Override
         public void act(float delta) {
             super.act(delta);
             this.getChildren().sort(comparator);
-        }
-
-        public void addOrbitActionsToWorldImages() {
-            for(Image worldImage : worldImages) {
-                float radius = random.nextFloat() * (getParent().getWidth() - star.getWidth()) / 2f + starSize / 2f;
-                float angle = random.nextFloat() * 2 * MathUtils.PI;
-                float speed = random.nextFloat();// / 100f;
-                Action orbitAction = TravelScreen.this.new WorldOrbitAction(
-                        getWidth() / 2f, getHeight() / 2f
-                        , radius, angle, speed
-                );
-                worldImage.addAction(Actions.forever(orbitAction));
-            }
         }
     }
 
@@ -239,7 +224,7 @@ public class TravelScreen extends MenuScreen {
         @Override
         public boolean keyDown(InputEvent event, int keycode) {
             if(keycode == ControllerService.getInput("back") || keycode == ControllerService.getInput("start"))
-                TravelScreen.this.TogglePauseMenu();
+                pauseMenu.toggle();
             return true;
         }
     }
@@ -247,7 +232,7 @@ public class TravelScreen extends MenuScreen {
     private class InformationChangeListener extends ChangeListener {
         @Override
         public void changed(ChangeEvent event, Actor actor) {
-            TravelScreen.this.TogglePauseMenu();
+            pauseMenu.toggle();
         }
     }
 
@@ -255,25 +240,16 @@ public class TravelScreen extends MenuScreen {
         @Override
         public void changed(ChangeEvent event, Actor actor) {
             GdxGame.audioService.playSound("select");
-            goToScreen(new OptionsMenuScreen());
+            GdxGame.goToScreen(new OptionsMenuScreen());
         }
     }
 
     private class NewSystemChangeListener extends ChangeListener {
         @Override
         public void changed(ChangeEvent event, Actor actor) {
-            GdxGame.uiService.getCurtain().setBounds(0, 0, GdxGame.uiService.getStage().getWidth(), GdxGame.uiService.getStage().getHeight());
-            GdxGame.uiService.getStage().addActor(GdxGame.uiService.getCurtain());
-            GdxGame.uiService.getCurtain().addAction(Actions.fadeIn(1.0f));
-            TimeService.addTimer(new TimeService.Timer(1.0f) {
-                @Override
-                public boolean onCompletion() {
-                    if(pauseMenu.hasParent()) pauseMenu.remove();
-                    DataService.clearSeed();
-                    goToScreen(new TravelScreen());
-                    return true;
-                }
-            });
+            if (pauseMenu.isVisible()) pauseMenu.toggle();
+            DataService.clearSeed();
+            GdxGame.goToScreen(new TravelScreen());
         }
     }
 

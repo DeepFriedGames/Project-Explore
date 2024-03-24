@@ -7,15 +7,12 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
-import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.shdwfghtr.asset.ControllerService;
 import com.shdwfghtr.asset.DataService;
-import com.shdwfghtr.asset.InventoryService;
 import com.shdwfghtr.asset.TimeService;
 import com.shdwfghtr.entity.Entity;
 import com.shdwfghtr.entity.Player;
@@ -33,12 +30,11 @@ import com.shdwfghtr.ui.WorldUIGroup;
 public class GameScreen implements Screen {
     private static final Vector2 VECTOR2 = new Vector2();
     private final SpriteBatch batch = new SpriteBatch();
-    private final Array<Actor> items = new Array<>();
     private final ShapeRenderer shapeRenderer = new ShapeRenderer();
-    private final PauseMenuTable menu;
+    private final PauseMenuTable pauseMenu;
     private final HUDTable hud;
     private InputHandler input;
-    private GameState state;
+    private GameState state = GameState.PLAY;
 
     public final World world;
     public final GameCamera camera;
@@ -48,8 +44,10 @@ public class GameScreen implements Screen {
         int camHeight = Sector.pHEIGHT;
         int camWidth = Gdx.graphics.getWidth() * camHeight / Gdx.graphics.getHeight();
         this.camera = new GameCamera(camWidth, camHeight);
-        this.menu = new PauseMenuTable(Player.CURRENT, worldUiGroup);
-        this.hud = new HUDTable(Player.CURRENT, menu.worldMap.miniMap, GdxGame.uiService.getSkin());
+        WorldUIGroup.WorldMap worldMap = worldUiGroup.new WorldMap();
+
+        this.pauseMenu = new PauseMenuTable(Player.CURRENT, worldMap);
+        this.hud = new HUDTable(Player.CURRENT, worldMap.miniMap, GdxGame.uiService.getSkin());
     }
 
     @Override
@@ -57,19 +55,21 @@ public class GameScreen implements Screen {
         GdxGame.audioService.setMusic("World" + world.index, true);
         GdxGame.audioService.fadeIn(5);
 
-        GdxGame.uiService.getStage().clear();
-        GdxGame.uiService.getStage().addActor(hud);
-        GdxGame.uiService.fadeOutCurtain(1.0f);
+        Table table = new Table();
+        table.add(hud).fillX().expandX().prefHeight(48);
+        table.add(pauseMenu).fill().expand();
+
+        GdxGame.uiService.getStage().addActor(table);
+        GdxGame.uiService.getStage().addAction(Actions.fadeIn(1.0f));
 
         if(ControllerService.isTouch())
-            menu.addListener(this.new ToggleTouchInputListener());
+            pauseMenu.addListener(this.new ToggleTouchInputListener());
 
         input = ControllerService.GetInputHandler();
         input.setGameScreen(this);
         input.setPlayer(Player.CURRENT);
         input.toStage(GdxGame.uiService.getStage());
         camera.position.set(Player.CURRENT.getCenterX(), Player.CURRENT.getY() + Tile.HEIGHT, 0);
-        setState(GameState.PLAY);
 
         GdxGame.uiService.getStage().addListener(new DebugTraumaInputListener());
     }
@@ -83,12 +83,6 @@ public class GameScreen implements Screen {
                 if(!playerSector.explored){
                     playerSector.explored = true;
                     DataService.setSectorExplored(playerSector, true);
-                }
-
-                //Oxygen is running out slowly
-                if(TimeService.GetTime() % (Player.CURRENT.armor / 2f + world.atmosphere + 0.5f) < 0.017f) {
-                    Player.CURRENT.health--;
-                    Player.CURRENT.oxygenEffect = GdxGame.particleService.obtain("oxygen", true);
                 }
 
                 camera.update();
@@ -168,46 +162,17 @@ public class GameScreen implements Screen {
         return state;
     }
 
-    public void setState(final GameState gameState) {
-        if(gameState == GameState.PLAY) {
-            //if the new state is play
-            GdxGame.audioService.playSound("select");
-            GdxGame.audioService.setVolume(1f);
-            menu.setTouchable(Touchable.disabled);
-            menu.addAction(Actions.fadeOut(0.6f));
-            TimeService.addTimer(new TimeService.Timer(0.6f){
-                @Override
-                public boolean onCompletion() {
-                    menu.remove();
-                    return true;
-                }
-            });
-            state = gameState;
-            //Sector sector = world.getSector(Player.CURRENT.getCenter());
-            for (Actor item : items) {
-                item.remove();
-            }
-            items.clear();
-        } else if(gameState == GameState.PAUSE) {
-            // if the new state is pause
-            menu.setTouchable(Touchable.childrenOnly);
-            menu.addAction(Actions.sequence(Actions.alpha(0), Actions.fadeIn(0.6f)));
-            GdxGame.uiService.getStage().addActor(menu);
-            GdxGame.audioService.playSound("select");
-            GdxGame.audioService.setVolume(0.5f);
-            //Sector sector = world.getSector(Player.CURRENT.getCenter());
-            //mapImages[sector.getYi()][sector.getXi()].addAction(Actions.forever(Actions.sequence(Actions.fadeOut(0.3f), Actions.fadeIn(0.2f))));
-
-            items.addAll(InventoryService.getInventoryActors());
-            for(Actor item : items){
-                item.setSize(menu.getWidth() / 4, GdxGame.uiService.getBodyFont().getLineHeight());
-                item.setTouchable(Touchable.enabled);
-                menu.add(item);
-            }
-
-            DataService.save(Player.CURRENT);
-            state = gameState;
-        } else state = gameState;
+    public void setState(GameState gameState) {
+        switch (gameState) {
+            case PLAY:
+                pauseMenu.toggle();
+                break;
+            case PAUSE:
+                pauseMenu.toggle();
+                DataService.save(Player.CURRENT);
+                break;
+        }
+        state = gameState;
     }
 
     private class DebugTraumaInputListener extends InputListener {

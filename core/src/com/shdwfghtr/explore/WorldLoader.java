@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.Array;
 import com.shdwfghtr.asset.ConversionService;
 import com.shdwfghtr.asset.DataService;
@@ -54,9 +55,10 @@ public class WorldLoader implements Runnable {
         world = new World(width, height);
         world.index = random.nextInt(World.NUM_INDICES);
         world.palette = PaletteService.generatePalette(random.nextFloat());
-        world.gravity = random.nextFloat() * 2 + 0.5f;
-        while(world.atmosphere <= 0)
-            world.atmosphere = (float) random.nextGaussian() * 0.5f + 1.0f;
+        world.setGravity(random.nextFloat() * 2 + 0.5f);
+        final Vector2 atmosphereVector = new Vector2();
+        world.setAtmosphere((float) Math.abs(random.nextGaussian()) + 0.5f
+        , GdxGame.textureAtlasService.findBackgroundRegion("fog"));
         world.setName(ConversionService.toString(seed));
 
     }

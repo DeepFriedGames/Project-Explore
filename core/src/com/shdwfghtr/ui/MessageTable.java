@@ -31,20 +31,11 @@ public class MessageTable extends Table {
         messages.add(message);
     }
 
-    @Override
-    protected void setStage(Stage stage) {
-        super.setStage(stage);
-        if(stage != null) {
-            setBounds(stage.getWidth() / 3, stage.getHeight()
-                    , stage.getWidth() / 3, HUDTable.HEIGHT);
-        }
-    }
-
     private class MessageAction extends Action {
         @Override
         public boolean act(float delta) {
             if(messages.size > 0 && msgTimer.isComplete()) {
-                actor.addAction(Actions.moveBy(0, - HUDTable.HEIGHT, 0.5f));
+                actor.addAction(Actions.moveBy(0, - 51, 0.5f));
                 ((Table) actor).add(new Label(messages.first(), getSkin(), "font", PaletteService.getPalette("ui")[17]));
                 msgTimer.reset();
             }
@@ -61,7 +52,7 @@ public class MessageTable extends Table {
         public boolean onCompletion() {
             clearChildren();
             messages.removeIndex(0);
-            addAction(Actions.moveBy(0, HUDTable.HEIGHT, 0.5f));
+            addAction(Actions.moveBy(0, 51, 0.5f));
             return true;
         }
     }

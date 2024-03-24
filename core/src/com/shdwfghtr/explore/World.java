@@ -22,46 +22,29 @@ import java.util.HashMap;
 
 public class World {
     public static final float DEFAULT_GRAVITY = 0.14f;
-    private static final Vector2 VECTOR2 = new Vector2();
-    private static final Pool<RestoreTimer> BREAK_TIMER_POOL = new Pool<RestoreTimer>() {
-        @Override
-        protected RestoreTimer newObject() {
-            return new RestoreTimer();
-        }
-    };
-    private static final Pool<DisruptTimer> DISRUPT_TIMER_POOL = new Pool<DisruptTimer>() {
-        @Override
-        protected DisruptTimer newObject() {
-            return new DisruptTimer();
-        }
-    };
     public static final int MIN_WIDTH = 16, MAX_WIDTH = 27, NUM_INDICES = 7;
     public static final float AVG_AREA = 320f, DENSITY = 0.18f;
     public static World CURRENT;
-
-    private final Array<Entity> activeEntities = new Array<>();
-    private final Array<Entity> inactiveEntities = new Array<>();
-    private final Array<Spawner> spawners = new Array<>();
-
     public final Sector[][] sectorMap;
-
     public final HashMap<Character, TextureRegion> tileRegions = new HashMap<>();
-
-    private final EntityUpdateThread entityThread;
     public Color[] palette;
     public String name;
     public int index = 0;
+
+    private static final Vector2 VECTOR2 = new Vector2();
+    private final Array<Entity> activeEntities = new Array<>();
+    private final Array<Entity> inactiveEntities = new Array<>();
+    private final Array<Spawner> spawners = new Array<>();
+    private final EntityUpdateThread entityThread;
     private float gravity, atmosphere;
     private final TextureRegion backgroundRegion;
     private TextureRegion atmosphereRegion;
-    private WorldFunction atmosphereFunction;
     private Color atmosphereColor;
 
     public World(int width, int height) {
         this.sectorMap = new Sector[height][width];
         this.entityThread = new EntityUpdateThread();
         backgroundRegion = GdxGame.textureAtlasService.findBackgroundRegion( "background" + index);
-        atmosphereRegion = GdxGame.textureAtlasService.findBackgroundRegion("fog");  //TODO use set atmosphere for this
     }
 
     public synchronized void update(float delta) {
@@ -101,17 +84,24 @@ public class World {
     }
 
     public void draw(Batch batch) {
-        drawRegionInParallax(batch, backgroundRegion, palette[7], 0.92f, 0, 0);
+        drawRegionInParallax(batch, backgroundRegion, palette[7], 0.92f, Vector2.Zero);
         drawEntities(batch);
         drawTiles(batch);
-        drawRegionInParallax(batch, atmosphereRegion, atmosphereColor, 1.0f, atmosphereFunction);
+        drawRegionInParallax(batch, atmosphereRegion, atmosphereColor, 1.0f, getAtmosphereOffset(TimeService.GetTime()));
     }
 
-    public void setAtmosphere(float atmosphere, TextureRegion atmosphereRegion, AtmosphereFunction function) {
-	this.atmosphere = atmosphere;
-        this.atmosphereColor = new Color(1, 1, 1, atmosphere / 8f);
-	this.atmosphereRegion = atmosphereRegion;
-	this.atmosphereFunction = function;
+    public static Vector2 getAtmosphereOffset(float time){
+        return VECTOR2.set(time, 8f * MathUtils.sinDeg(time));
+    }
+
+    public void setAtmosphere(float atmosphere, TextureRegion atmosphereRegion) {
+        this.atmosphere = atmosphere;
+            this.atmosphereColor = new Color(1, 1, 1, atmosphere / 8f);
+        this.atmosphereRegion = atmosphereRegion;
+    }
+
+    public float getAtmosphere() {
+        return atmosphere;
     }
 
     private void drawTiles(Batch batch) {
@@ -162,14 +152,14 @@ public class World {
     }
 
     //draws a region tiled with parallax scrolling
-    private void drawRegionInParallax(Batch batch, TextureRegion region, Color color, float parallax, float offsetX, float offsetY) {
+    private void drawRegionInParallax(Batch batch, TextureRegion region, Color color, float parallax, Vector2 offset) {
         if(region == null || GdxGame.getCamera() == null) return;
         Rectangle camera = GdxGame.getCamera().getBox();
 
         float regionWidth = region.getRegionWidth();
         float regionHeight = region.getRegionHeight();
-        float drawX = camera.x * parallax + offsetX;
-        float drawY = camera.y * parallax + offsetY;
+        float drawX = camera.x * parallax + offset.x;
+        float drawY = camera.y * parallax + offset.y;
 
         int widthsToDraw = MathUtils.ceil(camera.getWidth() / regionWidth);
         int heightsToDraw = MathUtils.ceil(camera.getHeight() / regionHeight);
@@ -187,11 +177,6 @@ public class World {
                 );
             }
 
-//        batch.draw(bg, camera.x - cutX, camera.y - cutY);
-//        batch.draw(bg, camera.x - cutX, camera.y - cutY + h);
-//        batch.draw(bg, camera.x - cutX + w, camera.y - cutY);
-//        batch.draw(bg, camera.x - cutX + w, camera.y - cutY + h);
-
         batch.setColor(previousColor);
     }
 
@@ -199,8 +184,8 @@ public class World {
         return getSector(worldPoint.x, worldPoint.y);
     }
 
+    //returns a sector based on a world point
     public Sector getSector(float worldX, float worldY) {
-        //returns a sector based on a world point
         int sx = (int) Math.floor(worldX / Sector.pWIDTH);
         int sy = (int) Math.floor(worldY / Sector.pHEIGHT);
 
@@ -231,8 +216,8 @@ public class World {
         }
     }
 
-    public void removeEntity(Entity entity) {  
-	    //TODO sector based determinism of entities to call update on
+    //TODO sector based determinism of entities to call update on
+    public void removeEntity(Entity entity) {
         activeEntities.removeValue(entity, true);
         inactiveEntities.removeValue(entity, true);
     }
@@ -290,6 +275,8 @@ public class World {
 
     public float getGravity() { return DEFAULT_GRAVITY * gravity; }
 
+    public void setGravity(float value) { this.gravity = value; }
+
     public void disruptTile(float x, float y) {
         if(Tile.isDisruptable(getChar(x, y))) {
             DisruptTimer timer = DISRUPT_TIMER_POOL.obtain();
@@ -318,27 +305,43 @@ public class World {
     }
 
     public static String getType(int index) {
-        if(index == 0)
-            return "planet_terran";
-        else if(index == 1)
-            return "planet_rocky";
-        else if(index == 2)
-            return "planet_ringed";
-        else if(index == 3)
-            return "planet_gaseous";
-        else if(index == 4)
-            return "planet_living";
-        else if(index == 5)
-            return "planet_station";
-        else if(index == 6)
-            return "planet_aquatic";
-        else
-            return "planet_barren";
+        switch (index) {
+            case 0:
+                return "planet_terran";
+            case 1:
+                return "planet_rocky";
+            case 2:
+                return "planet_ringed";
+            case 3:
+                return "planet_gaseous";
+            case 4:
+                return "planet_living";
+            case 5:
+                return "planet_station";
+            case 6:
+                return "planet_aquatic";
+            default:
+                return "planet_barren";
+        }
     }
 
     public static Rectangle getTileBox(float x, float y) {
         return new Rectangle(getTileX(x), getTileY(y), Tile.WIDTH, Tile.HEIGHT);
     }
+
+
+    private static final Pool<RestoreTimer> BREAK_TIMER_POOL = new Pool<RestoreTimer>() {
+        @Override
+        protected RestoreTimer newObject() {
+            return new RestoreTimer();
+        }
+    };
+    private static final Pool<DisruptTimer> DISRUPT_TIMER_POOL = new Pool<DisruptTimer>() {
+        @Override
+        protected DisruptTimer newObject() {
+            return new DisruptTimer();
+        }
+    };
 
     private static class RestoreTimer extends TimeService.Timer implements Pool.Poolable {
         final transient Rectangle box = new Rectangle(0, 0, Tile.WIDTH, Tile.HEIGHT);

@@ -82,7 +82,7 @@ public class OptionsMenuScreen extends MenuScreen {
         buttonControls.addListener(new ChangeListener() {
             @Override
             public void changed(ChangeEvent event, Actor actor) {
-                goToScreen(new ControlsMenuScreen());
+                GdxGame.goToScreen(new ControlsMenuScreen());
 
             }
         });
@@ -103,7 +103,8 @@ public class OptionsMenuScreen extends MenuScreen {
 
             }
         });
-        Table table = new Table();
+
+        Table table = new Table(GdxGame.uiService.getSkin());
         table.setBounds(0, 0, getStage().getWidth(), getStage().getHeight());
         table.add("Seed: ").right().pad(10);
         table.add(fieldSeed).pad(10).row();
@@ -120,7 +121,7 @@ public class OptionsMenuScreen extends MenuScreen {
 	
 	@Override
 	void goToPreviousScreen() {
-		goToScreen(new TravelScreen());
+		GdxGame.goToScreen(new TravelScreen());
 	}
 	
 }

@@ -1,7 +1,6 @@
 package com.shdwfghtr.ui;
 
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Interpolation;
@@ -25,17 +24,10 @@ import com.shdwfghtr.explore.WorldLoader;
 public class WorldUIGroup {
     public final String worldName;
     public final WorldLoader worldLoader;
-    public final WorldImage worldImage;
-    public final WorldClickDialog dialog;
 
     public WorldUIGroup(WorldLoader worldLoader) {
         this.worldLoader = worldLoader;
         this.worldName = "World " + worldLoader.world.name;
-
-        this.worldImage = this.new WorldImage();
-        this.dialog = this.new WorldClickDialog();
-
-        this.worldImage.addListener(this.new WorldClickListener());
     }
 
     public TextureRegion getWorldColorTextureRegion() {
@@ -47,7 +39,7 @@ public class WorldUIGroup {
     }
 
     public class WorldImage extends Image {
-        WorldImage() {
+        public WorldImage() {
             super(WorldUIGroup.this.getWorldColorTextureRegion());
 
             float variance = 1 - WorldUIGroup.this.worldLoader.area / World.AVG_AREA;
@@ -61,16 +53,18 @@ public class WorldUIGroup {
         @Override
         public void clicked(InputEvent event, float x, float y) {
             super.clicked(event, x, y);
-            WorldUIGroup.this.dialog.addAction(Actions.moveTo(x, y));
-            WorldUIGroup.this.dialog.show(event.getStage());
+
+            Dialog dialog = WorldUIGroup.this.new WorldClickDialog();
+            dialog.addAction(Actions.moveTo(x, y));
+            dialog.show(event.getStage());
         }
     }
 
     public class WorldInformationLabel extends Label {
         public WorldInformationLabel() {
             super("Type:  " + World.getType(worldLoader.world.index).replace("planet_", "").toUpperCase() + '\n' +
-                    "Gravity:  " + Math.round(worldLoader.world.gravity * 100) + "%\n" +
-                    "Atmosphere:  " + Math.round(worldLoader.world.atmosphere * 100) + '%'
+                    "Gravity:  " + Math.round(worldLoader.world.getGravity() * 100) + "%\n" +
+                    "Atmosphere:  " + Math.round(worldLoader.world.getAtmosphere() * 100) + '%'
                     , GdxGame.uiService.getSkin());
         }
     }
@@ -86,17 +80,10 @@ public class WorldUIGroup {
         @Override
         protected void result(Object object) {
             if(object.equals(0)){
-                //Travel to the destination
-                GdxGame.uiService.getCurtain().setBounds(0, 0, GdxGame.uiService.getStage().getWidth(), GdxGame.uiService.getStage().getHeight());
-                GdxGame.uiService.getStage().addActor(GdxGame.uiService.getCurtain());
-                GdxGame.uiService.getCurtain().addAction(Actions.fadeIn(1.0f));
-
                 World.CURRENT = worldLoader.world;
                 Thread thread = new Thread(worldLoader);
                 thread.start();
-                getStage().addActor(new Label("Please wait...", GdxGame.uiService.getSkin()));
             }
-            //remove dialog
             remove();
         }
     }
@@ -111,6 +98,7 @@ public class WorldUIGroup {
 
         public WorldMap(){
             World world = WorldUIGroup.this.worldLoader.world;
+            setName(worldName);
 
             TextureAtlas sectorAtlas = GdxGame.textureAtlasService.generateSectorAtlas(world);
             for(int yi=0; yi < world.getHeight(); yi++){

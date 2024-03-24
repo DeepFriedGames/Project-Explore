@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.shdwfghtr.asset.AudioService;
 import com.shdwfghtr.asset.DataService;
 import com.shdwfghtr.asset.InventoryService;
@@ -29,6 +30,10 @@ public class SplashScreen implements Screen{
             numDots++;
 
 			//Changes the screen to be the main menu
+			GdxGame.uiService.getStage().addAction(Actions.sequence(
+					Actions.alpha(0)
+					, Actions.fadeIn(0.5f))
+			);
             ((GdxGame) Gdx.app.getApplicationListener()).setScreen(new TravelScreen());
 		}
 

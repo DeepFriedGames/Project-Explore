@@ -6,10 +6,12 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.ParticleEffectPool;
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.shdwfghtr.explore.GdxGame;
@@ -43,15 +45,6 @@ class MenuScreen extends Group implements Screen {
 	public void render(float delta) {
 	}
 
-	void goToScreen(Screen screen) {
-		try {
-			((GdxGame) Gdx.app.getApplicationListener()).setScreen(screen);
-			GdxGame.particleService.remove(stars);
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-	}
-
 	void goToPreviousScreen() {
 		System.out.println("goToPreviousScreen needs to be overridden");
 	}
@@ -77,11 +70,11 @@ class MenuScreen extends Group implements Screen {
 	@Override
 	public void hide() {
 		dispose();
-
 	}
 
 	@Override
 	public void dispose() {
+		GdxGame.particleService.remove(stars);
 		Controllers.clearListeners();
 		this.clear();
 		this.remove();

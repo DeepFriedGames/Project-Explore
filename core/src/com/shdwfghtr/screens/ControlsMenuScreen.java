@@ -395,7 +395,7 @@ public class ControlsMenuScreen extends MenuScreen {
 	
 	@Override
 	void goToPreviousScreen() {
-		goToScreen(new OptionsMenuScreen());
+		GdxGame.goToScreen(new OptionsMenuScreen());
 	}
 }
 

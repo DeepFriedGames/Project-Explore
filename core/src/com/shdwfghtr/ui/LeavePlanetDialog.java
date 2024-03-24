@@ -1,6 +1,7 @@
 package com.shdwfghtr.ui;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
@@ -33,17 +34,17 @@ public class LeavePlanetDialog extends Dialog {
     @Override
     protected void result(Object object) {
         if (object.equals(1)) {
-            uiService.getCurtain().setBounds(0, 0
-                    , uiService.getStage().getWidth(), uiService.getStage().getHeight());
-            uiService.getStage().addActor(uiService.getCurtain());
-            uiService.getCurtain().addAction(Actions.fadeIn(1.0f));
-            TimeService.addTimer(new TimeService.Timer(1.0f) {
-                @Override
-                public boolean onCompletion() {
-                    ((GdxGame) Gdx.app.getApplicationListener()).setScreen(new TravelScreen());
-                    return true;
-                }
-            });
+            uiService.getStage().addAction(Actions.sequence(
+                    Actions.fadeOut(0.5f)
+                    , new Action(){
+                        @Override
+                        public boolean act(float delta) {
+                            ((GdxGame) Gdx.app.getApplicationListener()).setScreen(new TravelScreen());
+                            return true;
+                        }
+                    }
+                    , Actions.fadeIn(0.5f)
+            ));
         }
         remove();
     }

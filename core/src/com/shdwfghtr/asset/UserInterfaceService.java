@@ -4,15 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Cursor;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Button;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Touchpad;
 import com.badlogic.gdx.utils.Disposable;
@@ -26,7 +22,6 @@ public class UserInterfaceService implements Disposable {
     private final Stage stage;
     private final Skin uiSkin;
     private final CursorData cursor = new CursorData();
-    private final Image uiCurtain = new Image(new Texture(1, 1, Pixmap.Format.RGB565));
     private final MessageTable messageTable;
 
     public UserInterfaceService() {
@@ -73,21 +68,12 @@ public class UserInterfaceService implements Disposable {
         return uiSkin;
     }
 
-    public Image getCurtain() {
-        return uiCurtain;
-    }
-
     public BitmapFont getBodyFont() {
         return uiSkin.getFont("font");
     }
 
     public BitmapFont getHeaderFont() {
         return uiSkin.getFont("title");
-    }
-
-    public void fadeOutCurtain(float duration) {
-        stage.addActor(uiCurtain);
-        uiCurtain.addAction(Actions.fadeOut(duration));
     }
 
     public Button createButton() {
@@ -101,22 +87,6 @@ public class UserInterfaceService implements Disposable {
     public void resize(int width, int height) {
         if(stage != null)
             stage.getViewport().update(width, height);
-    }
-
-    public void DropCurtain(float duration) {
-        uiCurtain.setBounds(0, 0, stage.getWidth(), stage.getHeight());
-        uiCurtain.addAction(Actions.alpha(1));
-        uiCurtain.setName("Curtain");
-        uiCurtain.setTouchable(Touchable.disabled);
-        stage.addActor(uiCurtain);
-        uiCurtain.addAction(Actions.fadeOut(duration));
-        TimeService.addTimer(new TimeService.Timer(duration) {
-            @Override
-            public boolean onCompletion() {
-                uiCurtain.remove();
-                return true;
-            }
-        });
     }
 
     private class CursorData {
